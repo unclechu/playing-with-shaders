@@ -36,7 +36,11 @@ in
 pkgs.stdenv.mkDerivation rec {
   name = "playing-with-glsl";
   inherit src;
-  env = pkgs.buildEnv { inherit name; paths = buildInputs; };
+
+  env = pkgs.buildEnv {
+    inherit name;
+    paths = nativeBuildInputs ++ buildInputs;
+  };
 
   nativeBuildInputs = [
     pkgs.gcc
