@@ -17,6 +17,14 @@ nix-build
 result/bin/app
 ```
 
+You can pre-build Nix development environment
+(to add a GC root and prevent it from being garbage
+collected unless you remove the `result*` symlink):
+
+``` sh
+nix-build -A env -o result-env
+```
+
 ## Author
 
 Viacheslav Lotsmanov
