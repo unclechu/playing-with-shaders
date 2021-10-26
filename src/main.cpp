@@ -48,8 +48,8 @@ inline GLfloat rh(const GLfloat h, const GLfloat r)
 }
 
 void render(
-  const int ww, // window width
-  const int wh, // window height
+  const GLint ww, // window width
+  const GLint wh, // window height
   const GLfloat r, // ration
   const GLfloat t // time in seconds since the start of the program
 )
@@ -96,7 +96,7 @@ GLuint mk_shader(
   if (compilation_result == GL_FALSE) {
     GLint log_length;
     glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &log_length);
-    char *msg = new char[log_length];
+    GLchar *msg = new GLchar[log_length];
     glGetShaderInfoLog(shader, log_length, &log_length, msg);
 
     cerr
@@ -108,7 +108,7 @@ GLuint mk_shader(
       << "Shader source: " << endl
       << src << endl;
 
-    delete msg;
+    delete [] msg;
     glDeleteShader(shader);
     exit(EXIT_FAILURE);
   }
@@ -216,9 +216,9 @@ int main()
   glfwSwapInterval(-1); // no vsync (tearing is fixed at deriver’s level)
 
   while (glfwWindowShouldClose(window) != GLFW_TRUE) {
-    int ww, wh;
+    GLint ww, wh;
     glfwGetFramebufferSize(window, &ww, &wh);
-    float ratio = ww / static_cast<GLfloat>(wh);
+    GLfloat ratio = ww / static_cast<GLfloat>(wh);
     glViewport(0, 0, ww, wh);
     glClear(GL_COLOR_BUFFER_BIT);
     glUseProgram(program);
