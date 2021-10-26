@@ -71,11 +71,10 @@ void render_loop(
   while (glfwWindowShouldClose(window) != GLFW_TRUE) {
     GLint ww, wh;
     glfwGetFramebufferSize(window, &ww, &wh);
-    GLfloat ratio = ww / static_cast<GLfloat>(wh);
     glViewport(0, 0, ww, wh);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    render_callback(ww, wh, ratio);
+    render_callback(ww, wh, glfwGetTime());
 
     glfwSwapBuffers(window);
     glfwPollEvents();

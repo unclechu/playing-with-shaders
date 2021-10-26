@@ -64,15 +64,23 @@ int main()
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 2, 0);
   }
 
+  GLint ww_var_loc = glGetUniformLocation(program, "ww");
+  GLint wh_var_loc = glGetUniformLocation(program, "wh");
+  GLint time_var_loc = glGetUniformLocation(program, "time");
+
   render_loop(
     window,
 
-    [&](const GLfloat &ww, const GLfloat &wh, const GLfloat &ratio) {
+    [&](const GLfloat &ww, const GLfloat &wh, const GLfloat &time) {
       glUseProgram(program);
-      glDrawArrays(GL_TRIANGLES, 0, 3);
-      glUseProgram(0);
 
-      /* render(ww, wh, ratio, glfwGetTime()); */
+      glUniform1i(ww_var_loc, ww);
+      glUniform1i(wh_var_loc, wh);
+      glUniform1f(time_var_loc, time);
+
+      glDrawArrays(GL_TRIANGLES, 0, 3);
+
+      /* render(ww, wh, time); */
     },
 
     [&]() -> void {
