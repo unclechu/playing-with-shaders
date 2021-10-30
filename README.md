@@ -1,5 +1,7 @@
 # My GLSL shaders playground
 
+![Mandelbrot set](artwork/mandelbrot-set-screenshot.png)
+
 ## How to run
 
 Nix is a requirement.
