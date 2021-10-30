@@ -16,8 +16,10 @@ CPP_SHADERS := $(patsubst %.glsl,%.cpp,$(patsubst src/shaders/%,$(SHADERS_EMBED_
 
 all: clean build
 
-clean:
-	rm -rfv build
+clean: clean-build clean-shaders
+
+clean-build:
+	rm -rfv -- '$(BUILD_DIR)'
 
 clean-shaders:
 	rm -rfv -- '$(SHADERS_EMBED_DIR)'
@@ -36,6 +38,9 @@ build: $(CPP_SHADERS) $(OBJ)
 
 run: build
 	'$(BUILD_DIR)/$(TARGET)'
+
+run-mandelbrot: build
+	'$(BUILD_DIR)/$(TARGET)' mandelbrot
 
 install: build
 	cp -- '$(BUILD_DIR)/$(TARGET)' '$(PREFIX)/bin/$(TARGET)'

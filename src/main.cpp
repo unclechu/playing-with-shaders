@@ -11,30 +11,65 @@
 #include "gl_boilerplate.hpp"
 #include "render.hpp"
 
-#include "shaders/test_vertex.cpp"
-#include "shaders/test_fragment.cpp"
+#include "shaders/mandelbrot-set/vertex.cpp"
+#include "shaders/mandelbrot-set/fragment.cpp"
 
 using namespace std;
 
 
-int main()
+enum Shader {
+  MandelbrotSet
+};
+
+struct ShaderSrc {
+  Shader shader;
+  unsigned char *vertex;
+  unsigned int vertex_len;
+  unsigned char *fragment;
+  unsigned int fragment_len;
+};
+
+
+ShaderSrc getMandelbrotSetShader()
 {
+  ShaderSrc shader;
+  shader.shader       = MandelbrotSet;
+  shader.vertex       = src_shaders_mandelbrot_set_vertex_glsl;
+  shader.vertex_len   = src_shaders_mandelbrot_set_vertex_glsl_len;
+  shader.fragment     = src_shaders_mandelbrot_set_fragment_glsl;
+  shader.fragment_len = src_shaders_mandelbrot_set_fragment_glsl_len;
+  return shader;
+}
+
+
+int main(const int argc, const char *argv[])
+{
+  ShaderSrc shader;
+
+  if (argc == 1) {
+    shader = getMandelbrotSetShader();
+  } else if (argc == 2) {
+    string arg(argv[1]);
+
+    if (arg == "mandelbrot") {
+      shader = getMandelbrotSetShader();
+    } else {
+      cerr << "Incorrect arguments!" << endl;
+      return EXIT_FAILURE;
+    }
+  } else {
+    cerr << "Incorrect arguments!" << endl;
+    return EXIT_FAILURE;
+  }
+
   GLFWwindow *window = mk_window();
   GLuint program;
 
   {
     cout << "Compiling shaders…" << endl;
     const vector<GLuint> shaders {
-      mk_shader(
-        GL_VERTEX_SHADER,
-        src_shaders_test_vertex_glsl,
-        src_shaders_test_vertex_glsl_len
-      ),
-      mk_shader(
-        GL_FRAGMENT_SHADER,
-        src_shaders_test_fragment_glsl,
-        src_shaders_test_fragment_glsl_len
-      ),
+      mk_shader(GL_VERTEX_SHADER, shader.vertex, shader.vertex_len),
+      mk_shader(GL_FRAGMENT_SHADER, shader.fragment, shader.fragment_len),
     };
 
     cout << "Making GLSL program…" << endl;
