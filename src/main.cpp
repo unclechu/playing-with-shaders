@@ -41,28 +41,29 @@ int main()
     program = mk_program(shaders);
   }
 
-  // Shader program will be linked to the data built here
-  {
-    GLfloat positions[] = {
-      -0.5, -0.5,
-      0.0, 0.5,
-      0.5, -0.5,
-    };
+  GLfloat positions[] = {
+    -1, -1,
+    -1, 1,
+    1, 1,
 
-    GLuint buffer;
-    glGenBuffers(1, &buffer);
-    glBindBuffer(GL_ARRAY_BUFFER, buffer);
+    1, 1,
+    1, -1,
+    -1, -1,
+  };
 
-    glBufferData(
-      GL_ARRAY_BUFFER,
-      sizeof(positions), // 6 * sizeof(GLfloat),
-      positions,
-      GL_STATIC_DRAW
-    );
+  GLuint buffer;
+  glGenBuffers(1, &buffer);
+  glBindBuffer(GL_ARRAY_BUFFER, buffer);
 
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 2, 0);
-  }
+  glBufferData(
+    GL_ARRAY_BUFFER,
+    sizeof(positions), // 6 * sizeof(GLfloat),
+    positions,
+    GL_STATIC_DRAW
+  );
+
+  glEnableVertexAttribArray(0);
+  glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 2, 0);
 
   GLint ww_var_loc = glGetUniformLocation(program, "ww");
   GLint wh_var_loc = glGetUniformLocation(program, "wh");
@@ -78,7 +79,7 @@ int main()
       glUniform1i(wh_var_loc, wh);
       glUniform1f(time_var_loc, time);
 
-      glDrawArrays(GL_TRIANGLES, 0, 3);
+      glDrawArrays(GL_TRIANGLES, 0, sizeof(positions));
 
       /* render(ww, wh, time); */
     },

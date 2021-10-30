@@ -9,7 +9,7 @@ uniform int wh;
 // ratio correction for width
 float rw(float w, float r)
 {
-  return (r > 1.0) ? (w * 1.0 / r) : w;
+  return (r > 1.0) ? (w / r) : w;
 }
 
 // ratio correction for height
@@ -29,10 +29,12 @@ void main()
     position.w + 0.4 * time
   );*/
 
-  gl_Position = vec4(
+  /*gl_Position = vec4(
     rw(position.x, r) + 0.01 * time,
     rh(position.y, r) - 0.01 * time,
     position.z,
     position.w / 2
-  );
+  );*/
+
+  gl_Position = position;
 }

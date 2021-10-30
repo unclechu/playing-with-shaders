@@ -4,7 +4,7 @@
 // ratio correction for width
 inline GLfloat rw(const GLfloat w, const GLfloat r)
 {
-  return (r > 1.0) ? (w * 1.0 / r) : w;
+  return (r > 1.0) ? (w / r) : w;
 }
 
 

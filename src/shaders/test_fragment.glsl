@@ -1,26 +1,22 @@
 #version 330 core
 
-/* layout(location = 0) out vec4 color; */
-
 uniform float time;
 uniform int ww;
 uniform int wh;
 
-// ratio correction for width
-float rw(float w, float r)
-{
-  return (r > 1.0) ? (w * 1.0 / r) : w;
-}
-
-// ratio correction for height
-float rh(float h, float r)
-{
-  return (r < 1.0) ? (h * r) : h;
-}
-
 void main()
 {
-  float r = float(ww) / float(wh);
-  vec2 position = gl_FragCoord.xy / vec2(rw(ww, r), rh(wh, r)) - 0.5;
-  gl_FragColor = vec4(vec3(step(0.1, length(position))), 1.0);
+  float rx = float(ww) / float(wh);
+  float ry = float(wh) / float(ww);
+
+  vec2 correctedSize = vec2(ww * min(ry, 1.0), wh * min(rx, 1.0));
+  vec2 centering = vec2(1.0 - max(rx, 1.0), 1.0 - max(ry, 1.0));
+
+  vec2 position = (gl_FragCoord.xy / correctedSize * 2.0) + centering - 1.0;
+  position *= 2.0; // Convert canvas to range from -2.0 to +2.0
+
+  // Draw circle
+  vec3 color = vec3(step(1, length(position)));
+
+  gl_FragColor = vec4(color, 1.0);
 }
