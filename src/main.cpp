@@ -112,7 +112,7 @@ int main(const int argc, const char *argv[])
 
       glUniform1i(ww_var_loc, ww);
       glUniform1i(wh_var_loc, wh);
-      glUniform1f(time_var_loc, time);
+      glUniform1d(time_var_loc, time);
 
       glDrawArrays(GL_TRIANGLES, 0, sizeof(positions));
 

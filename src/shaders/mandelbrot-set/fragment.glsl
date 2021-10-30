@@ -1,6 +1,8 @@
-#version 330 core
+#version 430 core
 
-uniform float time;
+layout(location = 0) out vec4 result_color;
+
+uniform double time;
 uniform int ww;
 uniform int wh;
 
@@ -13,22 +15,22 @@ uniform int wh;
 // c = x*x + 2*x*y*i - y*y
 // c = (x*x - y*y) + (2*x*y)*i
 //
-float mandelbrotSet(vec2 point)
+double mandelbrotSet(dvec2 point)
 {
-  float z = 0;
-  vec2 xy = point;
+  double z = 0;
+  dvec2 xy = point;
 
-  float threshold = 16;
+  double threshold = 16;
   int limit = 50;
 
   for (int i = 0; i < limit; ++i) {
-    vec2 v = vec2(
-      pow(xy.x, 2) - pow(xy.y, 2),
+    dvec2 v = dvec2(
+      (xy.x * xy.x) - (xy.y * xy.y),
       2 * xy.x * xy.y
     );
 
     if (abs(v.x + v.y) > threshold)
-      return float(i) / limit;
+      return double(i) / limit;
 
     xy = v + point;
   }
@@ -38,17 +40,20 @@ float mandelbrotSet(vec2 point)
 
 void main()
 {
-  float rx = float(ww) / float(wh);
-  float ry = float(wh) / float(ww);
+  double rx = double(ww) / double(wh);
+  double ry = double(wh) / double(ww);
 
-  vec2 correctedSize = vec2(ww * min(ry, 1.0), wh * min(rx, 1.0));
-  vec2 centering = vec2(1.0 - max(rx, 1.0), 1.0 - max(ry, 1.0));
+  dvec2 correctedSize = dvec2(ww * min(ry, 1.0), wh * min(rx, 1.0));
+  dvec2 centering = dvec2(1.0 - max(rx, 1.0), 1.0 - max(ry, 1.0));
 
-  vec2 position = (gl_FragCoord.xy / correctedSize * 2.0) + centering - 1.0;
+  dvec2 position = (gl_FragCoord.xy / correctedSize * 2.0) + centering - 1.0;
   position *= 2.0; // Convert canvas to range from -2.0 to +2.0
   position.x -= 0.5; // Center the Mandelbrot set (move it to the right a bit)
 
-  float x = mandelbrotSet(position);
-  vec3 color = vec3(0, fract(x), sqrt(fract(x)));
-  gl_FragColor = vec4(color, 1.0);
+  position /= pow(float(time), 5); // Zoom over time
+  position.x -= 1.745;
+
+  double x = mandelbrotSet(position);
+  dvec3 color = dvec3(0, fract(x), sqrt(fract(x)));
+  result_color = vec4(color, 1.0);
 }
