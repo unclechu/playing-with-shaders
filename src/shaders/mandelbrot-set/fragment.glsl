@@ -50,7 +50,7 @@ void main()
   position *= 2.0; // Convert canvas to range from -2.0 to +2.0
   position.x -= 0.5; // Center the Mandelbrot set (move it to the right a bit)
 
-  position /= pow(float(time), 5); // Zoom over time
+  position /= pow(float(time), float(time)); // Zoom over time
   position.x -= 1.745;
 
   double x = mandelbrotSet(position);
