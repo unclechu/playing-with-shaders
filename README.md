@@ -11,7 +11,18 @@
 
 ## How to run
 
-Nix is a requirement.
+I didn’t try and/or test it outside NixOS but technically if you install
+following dependencies you can just run `make run` and it should work for you:
+
+1. GCC
+1. GNU Make
+1. pkg-config
+1. `xxd` executable
+1. GLFW3
+1. GLEW
+1. General OpenGL C header files
+
+### With Nix
 
 Either you enter a Nix Shell and run `make` commands:
 
