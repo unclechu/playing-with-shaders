@@ -3,11 +3,13 @@
 #include <vector>
 #include <algorithm>
 #include <functional>
+#include <math.h>
 
 #include <GL/glew.h>
 #include <GL/gl.h>
 #include <GLFW/glfw3.h>
 
+#include "controls.hpp"
 #include "gl_boilerplate.hpp"
 #include "render.hpp"
 
@@ -62,7 +64,12 @@ int main(const int argc, const char *argv[])
     return EXIT_FAILURE;
   }
 
-  GLFWwindow *window = mk_window();
+  Controls controls;
+
+  GLFWwindow *window = mk_window([&controls](int a, int b, int c, int d) {
+    on_key_event_controls_cb(&controls, a, b, c, d);
+  });
+
   GLuint program;
 
   {
@@ -104,10 +111,72 @@ int main(const int argc, const char *argv[])
   GLint wh_var_loc = glGetUniformLocation(program, "wh");
   GLint time_var_loc = glGetUniformLocation(program, "time");
 
+  GLint x_var_loc = glGetUniformLocation(program, "x");
+  GLint y_var_loc = glGetUniformLocation(program, "y");
+  GLint zoom_var_loc = glGetUniformLocation(program, "zoom");
+
+  GLdouble x = 0;
+  GLdouble y = 0;
+  GLdouble zoom = 1;
+  GLdouble zoom_powed = 1;
+
+  double last_time = 0;
+
   render_loop(
     window,
 
-    [&](const GLfloat &ww, const GLfloat &wh, const GLfloat &time) {
+    [&](const GLfloat &ww, const GLfloat &wh, const double &time) {
+      if (controls.reset_pressed) {
+        x = 0;
+        y = 0;
+        zoom = 1;
+
+        glUniform1d(x_var_loc, x);
+        glUniform1d(y_var_loc, y);
+        glUniform1d(zoom_var_loc, zoom);
+      } else {
+        double time_delta = time - last_time;
+        bool moved_x = false;
+        bool moved_y = false;
+        double zoom_step = controls.zoom_step;
+        double move_step = controls.move_step / zoom_powed;
+
+        if (controls.move_left_pressed) {
+          x -= move_step * time_delta;
+          moved_x = true;
+        }
+        if (controls.move_right_pressed) {
+          x += move_step * time_delta;
+          moved_x = true;
+        }
+        if (controls.move_down_pressed) {
+          y -= move_step * time_delta;
+          moved_y = true;
+        }
+        if (controls.move_up_pressed) {
+          y += move_step * time_delta;
+          moved_y = true;
+        }
+
+        if (moved_x) glUniform1d(x_var_loc, x);
+        if (moved_y) glUniform1d(y_var_loc, y);
+
+        switch (controls.zoom_state) {
+          case ZoomIn:
+            zoom += zoom_step * time_delta;
+            if (zoom < controls.zoom_step_slow) zoom = controls.zoom_step_slow;
+            zoom_powed = powf(zoom, zoom);
+            glUniform1d(zoom_var_loc, zoom_powed);
+            break;
+          case ZoomOut:
+            zoom -= zoom_step * time_delta;
+            if (zoom < controls.zoom_step_slow) zoom = controls.zoom_step_slow;
+            zoom_powed = powf(zoom, zoom);
+            glUniform1d(zoom_var_loc, zoom_powed);
+            break;
+        }
+      }
+
       glUseProgram(program);
 
       glUniform1i(ww_var_loc, ww);
@@ -117,6 +186,8 @@ int main(const int argc, const char *argv[])
       glDrawArrays(GL_TRIANGLES, 0, sizeof(positions));
 
       /* render(ww, wh, time); */
+
+      last_time = time;
     },
 
     [&]() -> void {

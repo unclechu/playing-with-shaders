@@ -2,9 +2,14 @@
 
 layout(location = 0) out vec4 result_color;
 
-uniform double time;
+uniform double time = 0;
 uniform int ww;
 uniform int wh;
+
+// For walking around
+uniform double x = 0;
+uniform double y = 0;
+uniform double zoom = 1;
 
 // c = x + yi where i*i = -1
 // distance: abs(x + yi)
@@ -48,10 +53,12 @@ void main()
 
   dvec2 position = (gl_FragCoord.xy / correctedSize * 2.0) + centering - 1.0;
   position *= 2.0; // Convert canvas to range from -2.0 to +2.0
-  position.x -= 0.5; // Center the Mandelbrot set (move it to the right a bit)
 
-  position /= pow(float(time), float(time)); // Zoom over time
-  position.x -= 1.745;
+  // position.x -= 0.5; // Center the Mandelbrot set (move it to the right a bit)
+
+  position /= zoom;
+  position.x += x;
+  position.y += y;
 
   double x = mandelbrotSet(position);
   dvec3 color = dvec3(0, fract(x), sqrt(fract(x)));

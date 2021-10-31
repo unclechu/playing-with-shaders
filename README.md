@@ -2,6 +2,13 @@
 
 ![Mandelbrot set](artwork/mandelbrot-set-screenshot.png)
 
+## Mandelbrot set movement controls
+
+1. Arrow keys (`←`, `→`, `↑`, and `↓`) for moving around
+2. `Z` and `X` for zooming in and zooming out
+3. `R` to reset everything to the starting point
+4. Hold `Alt` to slow down movement and zooming and hold `Shift` to speed it up
+
 ## How to run
 
 Nix is a requirement.

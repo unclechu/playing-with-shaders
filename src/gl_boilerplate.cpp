@@ -2,6 +2,7 @@
 #include <iostream>
 #include <vector>
 #include <functional>
+#include <optional>
 
 #include <GL/glew.h>
 #include <GL/gl.h>
@@ -12,7 +13,15 @@
 using namespace std;
 
 
-GLFWwindow* mk_window()
+optional<function<void(
+  int key,
+  int scancode,
+  int action,
+  int mods
+)>> on_key_event = nullptr;
+
+
+GLFWwindow* mk_window(decltype(on_key_event) on_key_event_cb)
 {
   {
     cout << "Initializing GLFW…" << endl;
@@ -36,8 +45,19 @@ GLFWwindow* mk_window()
     exit(EXIT_FAILURE);
   }
 
-  cout << "Setting GLFW key event callback…" << endl;
-  glfwSetKeyCallback(window, glfw_key_callback);
+  {
+    cout << "Setting GLFW key event callback…" << endl;
+
+    if (on_key_event != nullptr) {
+      cerr
+        << "On-key-event callback must be not set before window initialization!"
+        << endl;
+      exit(EXIT_FAILURE);
+    }
+
+    on_key_event = on_key_event_cb;
+    glfwSetKeyCallback(window, glfw_key_callback);
+  }
 
   cout << "Making GLFW window be current OpenGL context…" << endl;
   glfwMakeContextCurrent(window);
@@ -62,7 +82,7 @@ void render_loop(
   const function<void(
     const GLfloat&,
     const GLfloat&,
-    const GLfloat&
+    const double&
   )> render_callback,
 
   const function<void()> finalizer
@@ -111,6 +131,8 @@ void glfw_key_callback(
       << "Marking window as closing…"
       << endl;
     glfwSetWindowShouldClose(window, GLFW_TRUE);
+  } else if (on_key_event != nullptr) {
+    on_key_event.value()(key, scancode, action, mods);
   }
 }
 

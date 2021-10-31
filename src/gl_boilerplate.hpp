@@ -2,11 +2,17 @@
 
 #include <vector>
 #include <functional>
+#include <optional>
 
 #include <GLFW/glfw3.h>
 
 
-GLFWwindow* mk_window();
+GLFWwindow* mk_window(std::optional<std::function<void(
+  int key,
+  int scancode,
+  int action,
+  int mods
+)>> on_key_event_cb);
 
 void render_loop(
   GLFWwindow *window,
@@ -14,7 +20,7 @@ void render_loop(
   const std::function<void(
     const GLfloat&,
     const GLfloat&,
-    const GLfloat&
+    const double&
   )> render_callback,
 
   const std::function<void()> finalizer
