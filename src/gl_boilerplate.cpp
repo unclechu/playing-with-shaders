@@ -150,8 +150,8 @@ void render_loop(
   GLFWwindow *window,
 
   const function<void(
-    const GLfloat&,
-    const GLfloat&,
+    const GLint&,
+    const GLint&,
     const double&
   )> render_callback,
 

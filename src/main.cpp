@@ -136,11 +136,13 @@ int main(const int argc, const char *argv[])
 
   double last_time = 0;
   int last_mouse_zoom = controls.mouse.mouse_zoom;
+  int last_mouse_pos_x = controls.mouse.mouse_pos_x;
+  int last_mouse_pos_y = controls.mouse.mouse_pos_y;
 
   render_loop(
     window,
 
-    [&](const GLfloat &ww, const GLfloat &wh, const double &time) {
+    [&](const GLint &ww, const GLint &wh, const double &time) {
       if (controls.reset_pressed) {
         x = 0;
         y = 0;
@@ -173,11 +175,8 @@ int main(const int argc, const char *argv[])
           moved_y = true;
         }
 
-        if (moved_x) glUniform1d(x_var_loc, x);
-        if (moved_y) glUniform1d(y_var_loc, y);
-
         {
-          const double mouse_zoom_correction = 0.1;
+          static const double mouse_zoom_correction = 0.1;
 
           if (controls.zoom_state == ZoomIn) {
             zoom += zoom_step * time_delta;
@@ -192,7 +191,7 @@ int main(const int argc, const char *argv[])
           } else {
             int mouse_zoom = controls.mouse.mouse_zoom;
             if (mouse_zoom != last_mouse_zoom) {
-              zoom -= zoom_step * (last_mouse_zoom - mouse_zoom) * mouse_zoom_correction;
+              zoom += zoom_step * (mouse_zoom - last_mouse_zoom) * mouse_zoom_correction;
               if (zoom < 1) zoom = 1;
               zoom_powed = powf(zoom, zoom);
               glUniform1d(zoom_var_loc, zoom_powed);
@@ -200,6 +199,36 @@ int main(const int argc, const char *argv[])
             }
           }
         }
+
+        {
+          double pos_x = controls.mouse.mouse_pos_x;
+          double pos_y = controls.mouse.mouse_pos_y;
+          bool left_button_pressed = controls.mouse.mouse_left_button_pressed;
+
+          static const double step_correction = 4;
+
+          if (last_mouse_pos_x != pos_x) {
+            if (left_button_pressed) {
+              double step = (pos_x - last_mouse_pos_x) / ww;
+              double rx = max(double(ww) / double(wh), 1.0);
+              x -= step * rx * step_correction / zoom_powed;
+              moved_x = true;
+            }
+            last_mouse_pos_x = pos_x;
+          }
+          if (last_mouse_pos_y != pos_y) {
+            if (left_button_pressed) {
+              double step = (pos_y - last_mouse_pos_y) / wh;
+              double ry = max(double(wh) / double(ww), 1.0);
+              y += step * ry * step_correction / zoom_powed;
+              moved_y = true;
+            }
+            last_mouse_pos_y = pos_y;
+          }
+        }
+
+        if (moved_x) glUniform1d(x_var_loc, x);
+        if (moved_y) glUniform1d(y_var_loc, y);
       }
 
       glUseProgram(program);
