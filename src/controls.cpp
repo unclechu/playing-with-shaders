@@ -141,16 +141,20 @@ void on_mouse_event_controls_cb(
 )
 {
   visit(PatternMatch {
-    [](MousePosEvent ev) -> void {
-      cerr << "TODO mouse positioning " << ev.xpos << "x" << ev.ypos << endl;
+    [&controls](MousePosEvent ev) -> void {
+      controls->mouse_pos_x = ev.xpos;
+      controls->mouse_pos_y = ev.ypos;
     },
-    [](MouseScrollEvent ev) -> void {
-      cerr << "TODO mouse scrolling " << ev.xoffset << "x" << ev.yoffset << endl;
+    [&controls](MouseScrollEvent ev) -> void {
+      controls->mouse_zoom += ev.yoffset;
     },
-    [](MouseButtonEvent ev) -> void {
-      cerr << "TODO mouse button " << ev.button << " " << ev.action << " " << ev.mods << endl;
-      //GLFW_MOUSE_BUTTON_LEFT
-      //GLFW_PRESS
+    [&controls](MouseButtonEvent ev) -> void {
+      if (ev.button == GLFW_MOUSE_BUTTON_LEFT) {
+        if (ev.action == GLFW_PRESS)
+          controls->mouse_left_button_pressed = true;
+        else if (ev.action == GLFW_RELEASE)
+          controls->mouse_left_button_pressed = false;
+      }
     }
   }, mouse_event);
 }

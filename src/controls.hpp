@@ -16,7 +16,8 @@ enum ZoomState {
 struct MouseControls {
   int mouse_pos_x = 0;
   int mouse_pos_y = 0;
-  bool left_button_pressed = false;
+  int mouse_zoom = 0;
+  bool mouse_left_button_pressed = false;
 };
 
 struct Controls {

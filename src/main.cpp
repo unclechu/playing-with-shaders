@@ -135,6 +135,7 @@ int main(const int argc, const char *argv[])
   GLdouble zoom_powed = 1;
 
   double last_time = 0;
+  int last_mouse_zoom = controls.mouse.mouse_zoom;
 
   render_loop(
     window,
@@ -175,19 +176,29 @@ int main(const int argc, const char *argv[])
         if (moved_x) glUniform1d(x_var_loc, x);
         if (moved_y) glUniform1d(y_var_loc, y);
 
-        switch (controls.zoom_state) {
-          case ZoomIn:
+        {
+          const double mouse_zoom_correction = 0.1;
+
+          if (controls.zoom_state == ZoomIn) {
             zoom += zoom_step * time_delta;
-            if (zoom < controls.zoom_step_slow) zoom = controls.zoom_step_slow;
+            if (zoom < 1) zoom = 1;
             zoom_powed = powf(zoom, zoom);
             glUniform1d(zoom_var_loc, zoom_powed);
-            break;
-          case ZoomOut:
+          } else if (controls.zoom_state == ZoomOut) {
             zoom -= zoom_step * time_delta;
-            if (zoom < controls.zoom_step_slow) zoom = controls.zoom_step_slow;
+            if (zoom < 1) zoom = 1;
             zoom_powed = powf(zoom, zoom);
             glUniform1d(zoom_var_loc, zoom_powed);
-            break;
+          } else {
+            int mouse_zoom = controls.mouse.mouse_zoom;
+            if (mouse_zoom != last_mouse_zoom) {
+              zoom -= zoom_step * (last_mouse_zoom - mouse_zoom) * mouse_zoom_correction;
+              if (zoom < 1) zoom = 1;
+              zoom_powed = powf(zoom, zoom);
+              glUniform1d(zoom_var_loc, zoom_powed);
+              last_mouse_zoom = mouse_zoom;
+            }
+          }
         }
       }
 
