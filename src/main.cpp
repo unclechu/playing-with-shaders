@@ -66,9 +66,23 @@ int main(const int argc, const char *argv[])
 
   Controls controls;
 
-  GLFWwindow *window = mk_window([&controls](int a, int b, int c, int d) {
-    on_key_event_controls_cb(&controls, a, b, c, d);
-  });
+  GLFWwindow *window = mk_window(
+    [&controls](int a, int b, int c, int d) {
+      on_key_event_controls_cb(&controls, a, b, c, d);
+    },
+    [&controls](int xpos, int ypos) {
+      MousePosEvent ev { xpos, ypos };
+      on_mouse_event_controls_cb(&controls.mouse, ev);
+    },
+    [&controls](int xoffset, int yoffset) {
+      MouseScrollEvent ev { xoffset, yoffset };
+      on_mouse_event_controls_cb(&controls.mouse, ev);
+    },
+    [&controls](int button, int action, int mods) {
+      MouseButtonEvent ev { button, action, mods };
+      on_mouse_event_controls_cb(&controls.mouse, ev);
+    }
+  );
 
   GLuint program;
 

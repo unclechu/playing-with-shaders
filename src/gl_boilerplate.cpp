@@ -21,7 +21,67 @@ optional<function<void(
 )>> on_key_event = nullptr;
 
 
-GLFWwindow* mk_window(decltype(on_key_event) on_key_event_cb)
+optional<function<void(
+  double xpos,
+  double ypos
+)>> on_mouse_pos_event = nullptr;
+
+
+optional<function<void(
+  double xoffset,
+  double yoffset
+)>> on_mouse_scroll_event = nullptr;
+
+
+optional<function<void(
+  int button,
+  int action,
+  int mods
+)>> on_mouse_button_event = nullptr;
+
+
+void glfw_error_callback(const int error, const char* description);
+
+void glfw_key_callback(
+  GLFWwindow *window,
+  int key,
+  int scancode,
+  int action,
+  int mods
+);
+
+void glfw_cursor_pos_callback(GLFWwindow *window, double xpos, double ypos);
+void glfw_scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
+
+void glfw_mouse_button_callback(
+  GLFWwindow *window,
+  int button,
+  int action,
+  int mods
+);
+
+
+template <typename F>
+void callback_init_pre_check(string cb_name, optional<function<F>> cb)
+{
+  cout << "Setting GLFW " << cb_name << " callback…" << endl;
+
+  if (cb != nullptr) {
+    cb_name[0] = toupper(cb_name[0]);
+    cerr
+      << cb_name << " callback must be not set before window initialization!"
+      << endl;
+    exit(EXIT_FAILURE);
+  }
+}
+
+
+GLFWwindow* mk_window(
+  decltype(on_key_event) on_key_event_cb,
+  decltype(on_mouse_pos_event) on_mouse_pos_event_cb,
+  decltype(on_mouse_scroll_event) on_mouse_scroll_event_cb,
+  decltype(on_mouse_button_event) on_mouse_button_event_cb
+)
 {
   {
     cout << "Initializing GLFW…" << endl;
@@ -46,17 +106,27 @@ GLFWwindow* mk_window(decltype(on_key_event) on_key_event_cb)
   }
 
   {
-    cout << "Setting GLFW key event callback…" << endl;
-
-    if (on_key_event != nullptr) {
-      cerr
-        << "On-key-event callback must be not set before window initialization!"
-        << endl;
-      exit(EXIT_FAILURE);
-    }
-
+    callback_init_pre_check("key event", on_key_event);
     on_key_event = on_key_event_cb;
     glfwSetKeyCallback(window, glfw_key_callback);
+  }
+
+  {
+    callback_init_pre_check("mouse positioning", on_mouse_pos_event);
+    on_mouse_pos_event = on_mouse_pos_event_cb;
+    glfwSetCursorPosCallback(window, glfw_cursor_pos_callback);
+  }
+
+  {
+    callback_init_pre_check("mouse scroll", on_mouse_scroll_event);
+    on_mouse_scroll_event = on_mouse_scroll_event_cb;
+    glfwSetScrollCallback(window, glfw_scroll_callback);
+  }
+
+  {
+    callback_init_pre_check("mouse button", on_mouse_button_event);
+    on_mouse_button_event = on_mouse_button_event_cb;
+    glfwSetMouseButtonCallback(window, glfw_mouse_button_callback);
   }
 
   cout << "Making GLFW window be current OpenGL context…" << endl;
@@ -133,6 +203,35 @@ void glfw_key_callback(
     glfwSetWindowShouldClose(window, GLFW_TRUE);
   } else if (on_key_event != nullptr) {
     on_key_event.value()(key, scancode, action, mods);
+  }
+}
+
+
+void glfw_cursor_pos_callback(GLFWwindow *window, double xpos, double ypos)
+{
+  if (on_mouse_pos_event != nullptr) {
+    on_mouse_pos_event.value()(xpos, ypos);
+  }
+}
+
+
+void glfw_scroll_callback(GLFWwindow *window, double xoffset, double yoffset)
+{
+  if (on_mouse_scroll_event != nullptr) {
+    on_mouse_scroll_event.value()(xoffset, yoffset);
+  }
+}
+
+
+void glfw_mouse_button_callback(
+  GLFWwindow *window,
+  int button,
+  int action,
+  int mods
+)
+{
+  if (on_mouse_button_event != nullptr) {
+    on_mouse_button_event.value()(button, action, mods);
   }
 }
 

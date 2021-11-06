@@ -1,4 +1,8 @@
+#include <iostream> // just for debugging
+#include <variant>
+
 #include "controls.hpp"
+#include "helpers.hpp"
 
 using namespace std;
 
@@ -123,4 +127,30 @@ void on_key_event_controls_cb(
       controls->zoom_step = controls->zoom_step_norm;
     }
   }
+}
+
+
+void on_mouse_event_controls_cb(
+  MouseControls *controls,
+
+  std::variant<
+    MousePosEvent,
+    MouseScrollEvent,
+    MouseButtonEvent
+  > mouse_event
+)
+{
+  visit(PatternMatch {
+    [](MousePosEvent ev) -> void {
+      cerr << "TODO mouse positioning " << ev.xpos << "x" << ev.ypos << endl;
+    },
+    [](MouseScrollEvent ev) -> void {
+      cerr << "TODO mouse scrolling " << ev.xoffset << "x" << ev.yoffset << endl;
+    },
+    [](MouseButtonEvent ev) -> void {
+      cerr << "TODO mouse button " << ev.button << " " << ev.action << " " << ev.mods << endl;
+      //GLFW_MOUSE_BUTTON_LEFT
+      //GLFW_PRESS
+    }
+  }, mouse_event);
 }

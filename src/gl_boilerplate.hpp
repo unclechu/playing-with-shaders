@@ -7,12 +7,30 @@
 #include <GLFW/glfw3.h>
 
 
-GLFWwindow* mk_window(std::optional<std::function<void(
-  int key,
-  int scancode,
-  int action,
-  int mods
-)>> on_key_event_cb);
+GLFWwindow* mk_window(
+  std::optional<std::function<void(
+    int key,
+    int scancode,
+    int action,
+    int mods
+  )>> on_key_event_cb,
+
+  std::optional<std::function<void(
+    double xpos,
+    double ypos
+  )>> on_mouse_pos_event_cb,
+
+  std::optional<std::function<void(
+    double xoffset,
+    double yoffset
+  )>> on_mouse_scroll_event_cb,
+
+  std::optional<std::function<void(
+    int button,
+    int action,
+    int mods
+  )>> on_mouse_button_event_cb
+);
 
 void render_loop(
   GLFWwindow *window,
@@ -24,16 +42,6 @@ void render_loop(
   )> render_callback,
 
   const std::function<void()> finalizer
-);
-
-void glfw_error_callback(const int error, const char* description);
-
-void glfw_key_callback(
-  GLFWwindow *window,
-  int key,
-  int scancode,
-  int action,
-  int mods
 );
 
 GLuint mk_shader(

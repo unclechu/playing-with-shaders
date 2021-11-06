@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <functional>
+#include <variant>
 
 #include <GLFW/glfw3.h>
 
@@ -10,6 +11,12 @@ enum ZoomState {
   Standby,
   ZoomIn,
   ZoomOut,
+};
+
+struct MouseControls {
+  int mouse_pos_x = 0;
+  int mouse_pos_y = 0;
+  bool left_button_pressed = false;
 };
 
 struct Controls {
@@ -54,6 +61,8 @@ struct Controls {
 
   const int reset_key = GLFW_KEY_R;
   bool reset_pressed = false;
+
+  MouseControls mouse;
 };
 
 void on_key_event_controls_cb(
@@ -62,4 +71,30 @@ void on_key_event_controls_cb(
   int scancode,
   int action,
   int mods
+);
+
+struct MousePosEvent {
+  int xpos;
+  int ypos;
+};
+
+struct MouseScrollEvent {
+  int xoffset;
+  int yoffset;
+};
+
+struct MouseButtonEvent {
+  int button;
+  int action;
+  int mods;
+};
+
+void on_mouse_event_controls_cb(
+  MouseControls *controls,
+
+  std::variant<
+    MousePosEvent,
+    MouseScrollEvent,
+    MouseButtonEvent
+  > mouse_event
 );
