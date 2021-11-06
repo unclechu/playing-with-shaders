@@ -26,7 +26,10 @@ double mandelbrotSet(dvec2 point)
   dvec2 xy = point;
 
   double threshold = 16;
-  int limit = 50;
+  double detalisation_speed = 30; // Hz or FPS (added iterations per second)
+  int max_iterations = 1000;
+
+  int limit = min(int(round(time * detalisation_speed)), max_iterations);
 
   for (int i = 0; i < limit; ++i) {
     dvec2 v = dvec2(
