@@ -4,10 +4,17 @@
 
 ## Mandelbrot set movement controls
 
+### Keyboard
+
 1. Arrow keys (`←`, `→`, `↑`, and `↓`) for moving around
-2. `Z` and `X` for zooming in and zooming out
-3. `R` to reset everything to the starting point
-4. Hold `Alt` to slow down movement and zooming and hold `Shift` to speed it up
+1. `Z` and `X` for zooming in and zooming out
+1. `R` to reset everything to the starting point
+1. Hold `Alt` to slow down movement and zooming and hold `Shift` to speed it up
+
+### Mouse
+
+1. Drag and Drop (click left mouse button and hold while moving the cursor)
+1. Zoom by scrolling the mouse wheel
 
 ## How to run
 
