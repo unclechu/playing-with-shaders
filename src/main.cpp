@@ -158,6 +158,12 @@ int main(const int argc, const char *argv[])
         double zoom_step = controls.zoom_step;
         double move_step = controls.move_step / zoom_powed;
 
+        // Pre-cache it because it can be used in different places so you get
+        // less chance of race condition. Only one read per iteration.
+        double pos_x = controls.mouse.mouse_pos_x;
+        double pos_y = controls.mouse.mouse_pos_y;
+
+        // Moving
         if (controls.move_left_pressed) {
           x -= move_step * time_delta;
           moved_x = true;
@@ -175,6 +181,7 @@ int main(const int argc, const char *argv[])
           moved_y = true;
         }
 
+        // Zooming
         {
           static const double mouse_zoom_correction = 0.1;
 
@@ -190,19 +197,43 @@ int main(const int argc, const char *argv[])
             glUniform1d(zoom_var_loc, zoom_powed);
           } else {
             int mouse_zoom = controls.mouse.mouse_zoom;
-            if (mouse_zoom != last_mouse_zoom) {
-              zoom += zoom_step * (mouse_zoom - last_mouse_zoom) * mouse_zoom_correction;
-              if (zoom < 1) zoom = 1;
-              zoom_powed = powf(zoom, zoom);
+            int zoom_diff = mouse_zoom - last_mouse_zoom;
+            if (zoom_diff != 0) {
+              zoom += zoom_step * zoom_diff * mouse_zoom_correction;
+
+              if (zoom < 1) {
+                zoom = 1;
+                zoom_powed = powf(zoom, zoom);
+              } else {
+                zoom_powed = powf(zoom, zoom);
+                double rx = max(double(ww) / double(wh), 1.0);
+                double ry = max(double(wh) / double(ww), 1.0);
+
+                static const double correction = 2.0;
+
+                double x_co = (pos_x / ww * 2.0 - 1.0) * rx / correction;
+                double y_co = (pos_y / wh * 2.0 - 1.0) * ry / correction;
+
+                if (zoom_diff < 0) {
+                  x -= x_co / zoom_powed;
+                  y += y_co / zoom_powed;
+                } else {
+                  x += x_co / zoom_powed;
+                  y -= y_co / zoom_powed;
+                }
+
+                moved_x = true;
+                moved_y = true;
+              }
+
               glUniform1d(zoom_var_loc, zoom_powed);
               last_mouse_zoom = mouse_zoom;
             }
           }
         }
 
+        // Drag and Drop moving
         {
-          double pos_x = controls.mouse.mouse_pos_x;
-          double pos_y = controls.mouse.mouse_pos_y;
           bool left_button_pressed = controls.mouse.mouse_left_button_pressed;
 
           static const double step_correction = 4;
