@@ -64,6 +64,6 @@ void main()
   position.y += y;
 
   double x = mandelbrotSet(position);
-  dvec3 color = dvec3(0, fract(x), sqrt(fract(x)));
+  dvec3 color = dvec3(sqrt(fract(x)) / 3.0, fract(x), sqrt(fract(x)));
   result_color = vec4(color, 1.0);
 }
