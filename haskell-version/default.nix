@@ -42,7 +42,17 @@ let
           ||
           (
             (fileType == "regular") &&
-            (builtins.match "^src/.+\.(hs)$" rFileName != null)
+            (builtins.match "^src/.+\.hs$" rFileName != null)
+          )
+          ||
+          (
+            (fileType == "directory") &&
+            (builtins.match "^app$" rFileName != null)
+          )
+          ||
+          (
+            (fileType == "regular") &&
+            (builtins.match "^app/.+\.hs$" rFileName != null)
           );
       };
     in
