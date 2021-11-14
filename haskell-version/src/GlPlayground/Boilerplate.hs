@@ -1,4 +1,7 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE UnicodeSyntax #-}
 
 module GlPlayground.Boilerplate
@@ -7,9 +10,13 @@ module GlPlayground.Boilerplate
      ) where
 
 import Data.Bifunctor (bimap)
+import Data.IORef (newIORef, readIORef, atomicModifyIORef')
+import Data.String (fromString)
 import qualified Data.Text as T
 
-import Control.Monad (unless)
+import Control.Concurrent.Async (async)
+import Control.Exception (SomeException, catch)
+import Control.Monad (unless, when)
 import Control.Monad.Fix (fix)
 
 import qualified Graphics.UI.GLFW as GLFW
@@ -25,7 +32,8 @@ mkWindow onEventCallback = do
   GLFW.init >>= flip unless (fail "Failed to initialize GLFW!")
 
   logInfo "Setting GLFW error callback…"
-  GLFW.setErrorCallback ∘ Just $ \err msg →
+  GLFW.setErrorCallback ∘ Just $ \err msg → do
+    logError ∘ fromString $ "GLFW reports error " ⋄ show err ⋄ ": " ⋄ msg
     fail $ "GLFW reports error " ⋄ show err ⋄ ": " ⋄ msg
 
   logInfo "Setting minimal OpenGL version for GLFW…"
@@ -39,14 +47,42 @@ mkWindow onEventCallback = do
     GLFW.createWindow 640 480 "Playing with GLSL" Nothing Nothing
       >>= maybe (fail "Failed to create GLFW window!") pure
 
+  -- For some reason keys are not recognized.
+  -- See: https://github.com/bsl/GLFW-b/issues/94
+  hasLayoutRef ← newIORef (Nothing @Bool)
+
   do -- Setting event callbacks
 
     logInfo "Setting GLFW key event callback…"
     GLFW.setKeyCallback window ∘ Just $ \_ key scancode keyState mods → do
-      -- For some reason keys are not recognized.
-      -- See: https://github.com/bsl/GLFW-b/issues/94
-      keyRecognized ← GLFW.getKeyScancode GLFW.Key'Escape • (≠ (-1))
-      if ( (keyRecognized ∧ key ≡ GLFW.Key'Escape)
+      hasLayout ←
+        readIORef hasLayoutRef >>= \case
+          Just x → pure x
+          Nothing → do
+            isRecognized ← GLFW.getKeyScancode GLFW.Key'Escape • (≠ (-1))
+
+            _ ← async $
+              let
+                errHandler (e ∷ SomeException) =
+                  logError $ "Background task failed: " ⋄ fromString (show e)
+
+                task = do
+                  wasUpdated ←
+                    atomicModifyIORef' hasLayoutRef $
+                      maybe (Just isRecognized, True) (\x → (Just x, False))
+
+                  when (wasUpdated ∧ not isRecognized) $
+                    logError $ T.unwords
+                      [ "WARNING! It seems that there is a problem with"
+                      , "recognizing keyboard layout (couldn’t get scan code of"
+                      , "Escape key). Default QWERTY layout is used instead."
+                      ]
+              in
+                task `catch` errHandler
+
+            pure isRecognized
+
+      if ( (hasLayout ∧ key ≡ GLFW.Key'Escape)
          ∨ (key ≡ GLFW.Key'Unknown ∧ scancode ≡ 9)
          ) ∧ keyState ≡ GLFW.KeyState'Pressed
          then do
@@ -55,7 +91,10 @@ mkWindow onEventCallback = do
              , "Marking window as closing…"
              ]
            GLFW.setWindowShouldClose window True
-         else onEventCallback $ Event'Key key scancode keyState mods
+         else
+           -- TODO: Map keys if key is Key'Unknown and hasLayout is False
+           --       when there will be some keys used in the application.
+           onEventCallback $ Event'Key key scancode keyState mods
 
     logInfo "Setting GLFW mouse positioning callback…"
     GLFW.setCursorPosCallback window ∘ Just $ \_ x y →

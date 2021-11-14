@@ -34,6 +34,7 @@ library
     , OpenGL
     , GLFW-b
     , text
+    , async
   hs-source-dirs:
     src
   other-modules:

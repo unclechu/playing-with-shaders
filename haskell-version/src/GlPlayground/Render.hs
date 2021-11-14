@@ -13,7 +13,7 @@ import GlPlayground.Utils
 
 
 render ∷ State → (Int, Int) → Double → IO State
-render prevState@State{..} canvasSize@(w, h) time = do
+render prevState canvasSize@(w, h) time = do
   GL.renderPrimitive GL.Triangles $ do
     let
       anim = 0.1 × time

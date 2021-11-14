@@ -32,6 +32,9 @@ data State
   , state'LastTime ∷ Double
   }
 
+instance HasCanvasSize State where
+  getPrevCanvasSize State {..} = state'LastCanvasSize
+  getNextCanvasSize State {..} = readIORef state'CanvasSizeRef
 
 mkState ∷ IO State
 mkState
@@ -46,8 +49,3 @@ mkState
 class HasCanvasSize a where
   getPrevCanvasSize ∷ a → (Int, Int)
   getNextCanvasSize ∷ a → IO (Int, Int)
-
-
-instance HasCanvasSize State where
-  getPrevCanvasSize State {..} = state'LastCanvasSize
-  getNextCanvasSize State {..} = readIORef state'CanvasSizeRef
