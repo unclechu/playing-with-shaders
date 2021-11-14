@@ -13,7 +13,7 @@ module GlPlayground.App
 
 import Data.Bifunctor (bimap)
 import Data.Function (fix)
-import Data.IORef (IORef, newIORef, writeIORef)
+import Data.IORef (IORef, newIORef, writeIORef, readIORef)
 import Data.String (fromString)
 import qualified Data.Text as T
 
@@ -30,7 +30,11 @@ runApp = do
   state@State{..} ← mkState
 
   window ← mkWindow $ \case
+    Event'CanvasResize w h →
+      writeIORef state'CanvasSizeRef (w, h)
+
     _ → pure ()
+
     -- x → logInfo ∘ fromString ∘ show $ x
 
   renderLoop state window render (pure ())
@@ -67,19 +71,26 @@ data Event
   | Event'MousePos Double Double
   | Event'MouseScroll Double Double
   | Event'MouseButton GLFW.MouseButton GLFW.MouseButtonState GLFW.ModifierKeys
+  | Event'CanvasResize Int Int
   deriving stock (Eq, Show)
 
 
 data State
   = State
-  { state'LastTime ∷ Double
+  { state'CanvasSizeRef ∷ IORef (Int, Int)
+  , state'LastCanvasSize ∷ (Int, Int)
+  , state'LastTime ∷ Double
   }
 
 
 mkState ∷ IO State
 mkState
   = State
-  ∘ pure 0
+  ∘ newIORef initialCanvasSize
+  ↜ pure initialCanvasSize
+  ↜ pure 0
+  where
+    initialCanvasSize = (0, 0)
 
 
 mkWindow ∷ (Event → IO ()) → IO GLFW.Window
@@ -132,6 +143,14 @@ mkWindow onEventCallback = do
     GLFW.setMouseButtonCallback window ∘ Just $ \_ a b c →
       onEventCallback $ Event'MouseButton a b c
 
+    logInfo "Setting GLFW framebuffer resize callback…"
+    GLFW.setFramebufferSizeCallback window $ Just $ \_ w h →
+      onEventCallback $ Event'CanvasResize w h
+
+  logInfo "Dispatching initial framebuffer resize event…"
+  GLFW.getFramebufferSize window >>=
+    onEventCallback ∘ uncurry Event'CanvasResize
+
   logInfo "Making GLFW window be current OpenGL context…"
   GLFW.makeContextCurrent $ Just window
 
@@ -144,32 +163,36 @@ mkWindow onEventCallback = do
 
 
 renderLoop
-  ∷ state
+  ∷ State
   → GLFW.Window
-  → (state → (Int, Int) → Double → IO state)
+  → (State → (Int, Int) → Double → IO State)
   → IO ()
   → IO ()
 renderLoop initialState window renderFn finalizerFn = do
   logInfo "Running a render loop…"
 
-  ($ initialState) ∘ fix $ \again prevState → do
+  ($ initialState) ∘ fix $ \again prevState@State{..} → do
     shouldClose ← GLFW.windowShouldClose window
     unless shouldClose $ do
-      canvasSize ← GLFW.getFramebufferSize window
+      canvasSize ← readIORef state'CanvasSizeRef
 
-      GL.viewport GL.$=
-        ( GL.Position 0 0
-        , uncurry GL.Size
-        ∘ bimap fromIntegral fromIntegral
-        $ canvasSize
-        )
+      unless (canvasSize ≡ state'LastCanvasSize) $
+        GL.viewport GL.$=
+          ( GL.Position 0 0
+          , uncurry GL.Size
+          ∘ bimap fromIntegral fromIntegral
+          $ canvasSize
+          )
 
       GL.clear [GL.ColorBuffer]
       time ← GLFW.getTime >>= maybe (fail "Failed to read current time!") pure
       nextState ← renderFn prevState canvasSize time
       GLFW.swapBuffers window
       GLFW.pollEvents -- FIXME: Do in a separate thread and use waitEvents instead
+
       again nextState
+        { state'LastCanvasSize = canvasSize
+        }
 
   logInfo "Destroying GLFW window…"
   GLFW.destroyWindow window
