@@ -1,16 +1,11 @@
 let sources = import nix/sources.nix; in
 { pkgs ? import sources.nixpkgs {}
+, callPackage ? pkgs.callPackage
+, getRelativeFileName ? (callPackage nix/utils.nix {}).getRelativeFileName
 , project-path ? ./.
 }:
 
 let
-  getRelativeFileName = prefix: fileName:
-    # +1 and -1 for the slash after the prefix
-    builtins.substring
-      (builtins.stringLength prefix + 1)
-      (builtins.stringLength fileName - builtins.stringLength prefix - 1)
-      fileName;
-
   src = let
     filter = prefix: fileName: fileType:
       let relativeFileName = getRelativeFileName prefix fileName; in

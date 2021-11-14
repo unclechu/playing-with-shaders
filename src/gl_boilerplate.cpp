@@ -140,6 +140,7 @@ GLFWwindow* mk_window(
     }
   }
 
+  cout << "Disabling vertical synchronization…" << endl;
   glfwSwapInterval(-1); // no vsync (tearing is fixed at deriver’s level)
 
   return window;
@@ -158,6 +159,8 @@ void render_loop(
   const function<void()> finalizer
 )
 {
+  cout << "Running a render loop…" << endl;
+
   while (glfwWindowShouldClose(window) != GLFW_TRUE) {
     GLint ww, wh;
     glfwGetFramebufferSize(window, &ww, &wh);
@@ -173,6 +176,7 @@ void render_loop(
   cout << "Destroying GLFW window…" << endl;
   glfwDestroyWindow(window);
 
+  cout << "Calling finalizer callback…" << endl;
   finalizer();
 
   cout << "Terminating GLFW…" << endl;
