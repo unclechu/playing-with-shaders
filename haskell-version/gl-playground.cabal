@@ -24,6 +24,9 @@ maintainer:         lotsmanov89@gmail.com
 library
   exposed-modules:
     GlPlayground.App
+    GlPlayground.Boilerplate
+    GlPlayground.Render
+    GlPlayground.Types
     GlPlayground.Utils
   build-depends:
     , base
