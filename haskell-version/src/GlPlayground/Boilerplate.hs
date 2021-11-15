@@ -178,7 +178,7 @@ renderLoop initialState window renderFn finalizerFn = do
 
       nextState ← renderFn state canvasSize time
       liftIO $ GLFW.swapBuffers window
-      liftIO GLFW.pollEvents -- FIXME: Do in a separate thread and use waitEvents instead
+      liftIO GLFW.pollEvents
       again nextState
 
   logInfo "Destroying GLFW window…"

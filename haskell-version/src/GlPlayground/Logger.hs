@@ -28,7 +28,7 @@ import Control.Monad.IO.Class (MonadIO, liftIO)
 import Control.Monad.Reader (MonadReader, ReaderT, runReaderT, ask)
 
 import UnliftIO (MonadUnliftIO)
-import UnliftIO.Async (async, wait)
+import UnliftIO.Async (async, wait, asyncBound)
 import UnliftIO.Exception (SomeException, finally)
 import UnliftIO.MVar (MVar, takeMVar, putMVar, newEmptyMVar)
 
@@ -53,11 +53,11 @@ import UnliftIO.Concurrent (threadDelay)
 withLogger ∷ MonadUnliftIO m ⇒ MyLoggerMonad m () → m ()
 withLogger m = do
   messageBus ← newEmptyMVar
-  let terminateLogger = putMVar messageBus Nothing
+  let terminateLogger = void ∘ async $ putMVar messageBus Nothing
   let runM = runReaderT (runMyLoggerMonad m) messageBus
 
   loggerThread ← async $ logger messageBus
-  mThread ← async $ runM `finally` terminateLogger
+  mThread ← asyncBound $ runM `finally` terminateLogger
 
   wait loggerThread -- Let the logger read everything first
   wait mThread
