@@ -6,14 +6,16 @@ module GlPlayground.Render
      ( render
      ) where
 
+import Control.Monad.IO.Class (MonadIO, liftIO)
+
 import qualified Graphics.Rendering.OpenGL.GL as GL
 
 import GlPlayground.Types
 import GlPlayground.Utils
 
 
-render ∷ State → (Int, Int) → Double → IO State
-render prevState canvasSize@(w, h) time = do
+render ∷ MonadIO m ⇒ State → (Int, Int) → Double → m State
+render prevState canvasSize@(w, h) time = liftIO $ do
   GL.renderPrimitive GL.Triangles $ do
     let
       anim = 0.1 × time

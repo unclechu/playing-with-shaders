@@ -25,16 +25,25 @@ library
   exposed-modules:
     GlPlayground.App
     GlPlayground.Boilerplate
+    GlPlayground.Logger
     GlPlayground.Render
     GlPlayground.Types
     GlPlayground.Utils
   build-depends:
+    , GLFW-b
+    , OpenGL
     , base
     , base-unicode-symbols
-    , OpenGL
-    , GLFW-b
+    , bytestring
+    , lifted-async
+    , monad-control
+    , monad-logger
+    , mtl
+    , safe-exceptions
+    , stm
     , text
-    , async
+    , unliftio
+    , unliftio-core
   hs-source-dirs:
     src
   other-modules:

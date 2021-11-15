@@ -1,4 +1,6 @@
 {-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE UnicodeSyntax #-}
 
@@ -9,7 +11,8 @@ module GlPlayground.Types
      , HasCanvasSize (..)
      ) where
 
-import Data.IORef (IORef, newIORef, readIORef)
+import UnliftIO (MonadUnliftIO)
+import UnliftIO.IORef (IORef, newIORef, readIORef)
 
 import qualified Graphics.UI.GLFW as GLFW
 
@@ -32,11 +35,11 @@ data State
   , state'LastTime ∷ Double
   }
 
-instance HasCanvasSize State where
-  getPrevCanvasSize State {..} = state'LastCanvasSize
+instance MonadUnliftIO m ⇒ HasCanvasSize m State where
+  getPrevCanvasSize State {..} = pure state'LastCanvasSize
   getNextCanvasSize State {..} = readIORef state'CanvasSizeRef
 
-mkState ∷ IO State
+mkState ∷ MonadUnliftIO m ⇒ m State
 mkState
   = State
   ∘ newIORef initialCanvasSize
@@ -46,6 +49,6 @@ mkState
     initialCanvasSize = (0, 0)
 
 
-class HasCanvasSize a where
-  getPrevCanvasSize ∷ a → (Int, Int)
-  getNextCanvasSize ∷ a → IO (Int, Int)
+class HasCanvasSize m a where
+  getPrevCanvasSize ∷ a → m (Int, Int)
+  getNextCanvasSize ∷ a → m (Int, Int)

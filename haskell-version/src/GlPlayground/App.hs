@@ -6,17 +6,21 @@ module GlPlayground.App
      ( runApp
      ) where
 
-import Data.IORef (writeIORef)
 import Data.String (fromString)
 
+import Control.Monad.IO.Class (liftIO)
+
+import UnliftIO.IORef (writeIORef)
+
 import GlPlayground.Boilerplate
+import GlPlayground.Logger
 import GlPlayground.Render
 import GlPlayground.Types
 import GlPlayground.Utils
 
 
 runApp ∷ IO ()
-runApp = do
+runApp = withLogger $ do
   state@State{..} ← mkState
 
   window ← mkWindow $ \case

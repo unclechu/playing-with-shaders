@@ -2,16 +2,11 @@
 
 module GlPlayground.Utils
      ( (⋄), (∘), (•), (↤), (↦), (↜), (↝), (↫), (↬)
-     , logInfo
-     , logError
      , module Data.Eq.Unicode
      , module Data.Bool.Unicode
      , module Prelude.Unicode
      ) where
 
-import Data.Text (Text)
-import qualified Data.Text.IO as T
-import System.IO (stderr)
 import Data.Functor ((<&>), ($>))
 import Control.Applicative ((<**>))
 import Data.Eq.Unicode ((≡), (≠))
@@ -64,10 +59,3 @@ infixl 4 ↫
 (↬) ∷ Applicative f ⇒ f a → f b → f b
 (↬) = (*>)
 infixl 4 ↬
-
-
-logInfo ∷ Text → IO ()
-logInfo = T.putStrLn
-
-logError ∷ Text → IO ()
-logError = T.hPutStrLn stderr
