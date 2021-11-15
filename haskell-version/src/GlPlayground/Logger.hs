@@ -75,7 +75,7 @@ logger messageBus = liftIO ∘ fix $ \again →
       again
   where
     infoFn = T.putStrLn
-    errorFn = T.hPutStr stderr
+    errorFn = T.hPutStrLn stderr
 
     logMsg ∷ LogLevel → Maybe Loc → Text → IO ()
     logMsg logLevel location msg =

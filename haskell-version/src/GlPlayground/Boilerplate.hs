@@ -22,7 +22,7 @@ import Control.Monad.Logger (MonadLogger)
 import UnliftIO (MonadUnliftIO, withRunInIO)
 import UnliftIO.Async (async)
 import UnliftIO.Exception (SomeException, catch)
-import UnliftIO.IORef (newIORef, readIORef, atomicModifyIORef')
+import UnliftIO.IORef (IORef, newIORef, readIORef, atomicModifyIORef')
 
 import qualified Graphics.UI.GLFW as GLFW
 import qualified Graphics.Rendering.OpenGL.GL as GL
@@ -33,7 +33,7 @@ import GlPlayground.Utils
 
 
 mkWindow
-  ∷ (MonadUnliftIO m, MonadLogger m, MonadFail m)
+  ∷ ∀ m. (MonadUnliftIO m, MonadLogger m, MonadFail m)
   ⇒ (Event → m ())
   → m GLFW.Window
 mkWindow onEventCallback = do
@@ -57,47 +57,19 @@ mkWindow onEventCallback = do
     liftIO (GLFW.createWindow 640 480 "Playing with GLSL" Nothing Nothing)
       >>= maybe (fail "Failed to create GLFW window!") pure
 
-  -- For some reason keys are not recognized.
-  -- See: https://github.com/bsl/GLFW-b/issues/94
-  hasLayoutRef ← newIORef (Nothing @Bool)
-
   do -- Setting event callbacks
 
     logInfo "Setting GLFW key event callback…"
-    withRunInIO $ \runInIO →
+    withRunInIO $ \runInIO → do
+      -- For some reason keys are not recognized.
+      -- See: https://github.com/bsl/GLFW-b/issues/94
+      hasLayoutRef ← newIORef (Nothing @Bool)
+
       GLFW.setKeyCallback window ∘ Just $
-        \_ key scancode keyState mods → runInIO $ do
-          hasLayout ←
-            readIORef hasLayoutRef >>= \case
-              Just x → pure x
-              Nothing → do
-                isRecognized ←
-                  liftIO $ GLFW.getKeyScancode GLFW.Key'Escape • (≠ (-1))
+        \_ originalKey scancode keyState mods → runInIO $ do
+          key ← keyLayoutResolve hasLayoutRef originalKey scancode
 
-                _ ← async $
-                  let
-                    errHandler (e ∷ SomeException) =
-                      logError $ "Background task failed: " ⋄ fromString (show e)
-
-                    task = do
-                      wasUpdated ←
-                        atomicModifyIORef' hasLayoutRef $
-                          maybe (Just isRecognized, True) (\x → (Just x, False))
-
-                      when (wasUpdated ∧ not isRecognized) $
-                        logWarning $ T.unwords
-                          [ "It seems that there is a problem with recognizing"
-                          , "keyboard layout (couldn’t get scan code of Escape"
-                          , "key). Default QWERTY layout is used instead."
-                          ]
-                  in
-                    task `catch` errHandler
-
-                pure isRecognized
-
-          if ( (hasLayout ∧ key ≡ GLFW.Key'Escape)
-             ∨ (key ≡ GLFW.Key'Unknown ∧ scancode ≡ 9)
-             ) ∧ keyState ≡ GLFW.KeyState'Pressed
+          if key ≡ GLFW.Key'Escape ∧ keyState ≡ GLFW.KeyState'Pressed
              then do
                logInfo $ T.unwords
                  [ "Received escape key press event."
@@ -105,8 +77,6 @@ mkWindow onEventCallback = do
                  ]
                liftIO $ GLFW.setWindowShouldClose window True
              else
-               -- TODO: Map keys if key is Key'Unknown and hasLayout is False
-               --       when there will be some keys used in the application.
                onEventCallback $ Event'Key key scancode keyState mods
 
     logInfo "Setting GLFW mouse positioning callback…"
@@ -144,6 +114,43 @@ mkWindow onEventCallback = do
   liftIO $ GLFW.swapInterval (-1)
 
   pure window
+
+  where
+    keyLayoutResolve ∷ IORef (Maybe Bool) → GLFW.Key → Int → m GLFW.Key
+    keyLayoutResolve hasLayoutRef key scancode =
+      let
+        fromDefaultLayout ∷ GLFW.Key
+        fromDefaultLayout = case scancode of
+          9 → GLFW.Key'Escape
+          _ → key
+      in
+        readIORef hasLayoutRef >>= \case
+          Just True → pure key
+          Just False → pure fromDefaultLayout
+          Nothing → do
+            isRecognized ←
+              liftIO $ GLFW.getKeyScancode GLFW.Key'Escape • (≠ (-1))
+
+            _ ← async $
+              let
+                errHandler (e ∷ SomeException) =
+                  logError $ "Background task failed: " ⋄ fromString (show e)
+
+                task = do
+                  wasUpdated ←
+                    atomicModifyIORef' hasLayoutRef $
+                      maybe (Just isRecognized, True) (\x → (Just x, False))
+
+                  when (wasUpdated ∧ not isRecognized) $
+                    logWarning $ T.unwords
+                      [ "It seems that there is a problem with recognizing"
+                      , "keyboard layout (couldn’t get scan code of Escape"
+                      , "key). Default QWERTY layout is used instead."
+                      ]
+              in
+                task `catch` errHandler
+
+            pure $ if isRecognized then key else fromDefaultLayout
 
 
 renderLoop
