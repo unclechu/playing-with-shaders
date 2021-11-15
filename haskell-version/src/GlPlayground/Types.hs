@@ -1,6 +1,4 @@
 {-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE UnicodeSyntax #-}
 
@@ -31,24 +29,29 @@ data Event
 data State
   = State
   { state'CanvasSizeRef ∷ IORef (Int, Int)
-  , state'LastCanvasSize ∷ (Int, Int)
-  , state'LastTime ∷ Double
+  , state'OldCanvasSize ∷ (Int, Int)
+  , state'NewCanvasSize ∷ (Int, Int)
+  , state'OldTime ∷ Double
+  , state'NewTime ∷ Double
   }
 
-instance MonadUnliftIO m ⇒ HasCanvasSize m State where
-  getPrevCanvasSize State {..} = pure state'LastCanvasSize
-  getNextCanvasSize State {..} = readIORef state'CanvasSizeRef
+instance HasCanvasSize State where
+  getOldCanvasSize State {..} = state'OldCanvasSize
+  getNewCanvasSize State {..} = state'NewCanvasSize
 
 mkState ∷ MonadUnliftIO m ⇒ m State
 mkState
   = State
   ∘ newIORef initialCanvasSize
   ↜ pure initialCanvasSize
-  ↜ pure 0
+  ↜ pure initialCanvasSize
+  ↜ pure initialTime
+  ↜ pure initialTime
   where
     initialCanvasSize = (0, 0)
+    initialTime = 0
 
 
-class HasCanvasSize m a where
-  getPrevCanvasSize ∷ a → m (Int, Int)
-  getNextCanvasSize ∷ a → m (Int, Int)
+class HasCanvasSize a where
+  getOldCanvasSize ∷ a → (Int, Int)
+  getNewCanvasSize ∷ a → (Int, Int)

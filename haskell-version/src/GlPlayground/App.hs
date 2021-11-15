@@ -10,7 +10,10 @@ import Data.String (fromString)
 
 import Control.Monad.IO.Class (liftIO)
 
-import UnliftIO.IORef (writeIORef)
+import UnliftIO (MonadUnliftIO)
+import UnliftIO.IORef (writeIORef, readIORef)
+
+import qualified Graphics.UI.GLFW as GLFW
 
 import GlPlayground.Boilerplate
 import GlPlayground.Logger
@@ -31,4 +34,20 @@ runApp = withLogger $ do
 
     -- x → logInfo ∘ fromString ∘ show $ x
 
-  renderLoop state window render (pure ())
+  mainLoop window state update render (pure ())
+
+
+update ∷ (MonadUnliftIO m, MonadFail m) ⇒ State → m State
+update state@State{..} = do
+  canvasSize ← readIORef state'CanvasSizeRef
+
+  time ←
+    liftIO GLFW.getTime >>=
+      maybe (fail "Failed to read current time!") pure
+
+  pure state
+    { state'OldCanvasSize = state'NewCanvasSize
+    , state'NewCanvasSize = canvasSize
+    , state'OldTime = state'NewTime
+    , state'NewTime = time
+    }

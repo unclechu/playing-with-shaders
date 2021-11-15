@@ -14,8 +14,8 @@ import GlPlayground.Types
 import GlPlayground.Utils
 
 
-render ∷ MonadIO m ⇒ State → (Int, Int) → Double → m State
-render prevState canvasSize@(w, h) time = liftIO $ do
+render ∷ MonadIO m ⇒ State → m ()
+render State{..} = liftIO $ do
   GL.renderPrimitive GL.Triangles $ do
     let
       anim = 0.1 × time
@@ -28,14 +28,10 @@ render prevState canvasSize@(w, h) time = liftIO $ do
     GL.color $ GL.Color3 @Double 0.3 0.3 0.3
     GL.vertex $ GL.Vertex3 (rw $ x + anim) (rh $ (-x) + (-anim)) 0
 
-  pure nextState
-
   where
     r = fromIntegral w ÷ fromIntegral h ∷ Double
     rw x | r > 1.0 = x ÷ r | otherwise = x ∷ Double
     rh x | r < 1.0 = x × r | otherwise = x ∷ Double
 
-    nextState = prevState
-      { state'LastTime = time
-      , state'LastCanvasSize = canvasSize
-      }
+    (w, h) = state'NewCanvasSize
+    time = state'NewTime

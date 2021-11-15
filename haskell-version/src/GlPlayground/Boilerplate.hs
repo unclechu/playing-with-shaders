@@ -7,7 +7,7 @@
 
 module GlPlayground.Boilerplate
      ( mkWindow
-     , renderLoop
+     , mainLoop
      ) where
 
 import Data.Bifunctor (bimap)
@@ -153,21 +153,29 @@ mkWindow onEventCallback = do
             pure $ if isRecognized then key else fromDefaultLayout
 
 
-renderLoop
-  ∷ (MonadUnliftIO m, MonadLogger m, MonadFail m, HasCanvasSize m state)
-  ⇒ state
-  → GLFW.Window
-  → (state → (Int, Int) → Double → m state)
+mainLoop
+  ∷ (MonadUnliftIO m, MonadLogger m, MonadFail m, HasCanvasSize state)
+  ⇒ GLFW.Window
+  → state
+  -- ^ Initial state
+  → (state → m state)
+  -- ^ State update callback
+  → (state → m ())
+  -- ^ Render callback
   → m ()
+  -- ^ Finalizer callback
   → m ()
-renderLoop initialState window renderFn finalizerFn = do
+mainLoop window initialState updateFn renderFn finalizerFn = do
   logInfo "Running a render loop…"
 
   ($ initialState) ∘ fix $ \again state → do
     shouldClose ← liftIO $ GLFW.windowShouldClose window
     unless shouldClose $ do
-      lastCanvasSize ← getPrevCanvasSize state
-      canvasSize ← getNextCanvasSize state
+      nextState ← updateFn state
+
+      let
+        lastCanvasSize = getOldCanvasSize state
+        canvasSize = getNewCanvasSize state
 
       unless (canvasSize ≡ lastCanvasSize) $
         liftIO $ GL.viewport GL.$=
@@ -178,12 +186,7 @@ renderLoop initialState window renderFn finalizerFn = do
           )
 
       liftIO $ GL.clear [GL.ColorBuffer]
-
-      time ←
-        liftIO GLFW.getTime >>=
-          maybe (fail "Failed to read current time!") pure
-
-      nextState ← renderFn state canvasSize time
+      renderFn state
       liftIO $ GLFW.swapBuffers window
       liftIO GLFW.pollEvents
       again nextState
