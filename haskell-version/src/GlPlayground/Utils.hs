@@ -1,17 +1,30 @@
 {-# LANGUAGE UnicodeSyntax #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module GlPlayground.Utils
      ( (⋄), (∘), (•), (↤), (↦), (↜), (↝), (↫), (↬)
      , module Data.Eq.Unicode
      , module Data.Bool.Unicode
      , module Prelude.Unicode
+
+     -- * Async stuff
+     , inBackground
+     , inBackgroundBound
      ) where
 
-import Data.Functor ((<&>), ($>))
-import Control.Applicative ((<**>))
-import Data.Eq.Unicode ((≡), (≠))
 import Data.Bool.Unicode ((∧), (∨))
+import Data.Eq.Unicode ((≡), (≠))
+import Data.Functor ((<&>), ($>))
 import Prelude.Unicode ((×), (÷))
+
+import Control.Applicative ((<**>))
+import Control.Monad (void)
+
+import UnliftIO (MonadUnliftIO, liftIO)
+import UnliftIO.Async (Async, async, asyncBound)
+import UnliftIO.Exception (SomeException, catch)
+
+import System.IO (hPutStrLn, stderr)
 
 
 {-# INLINE (⋄) #-}
@@ -59,3 +72,25 @@ infixl 4 ↫
 (↬) ∷ Applicative f ⇒ f a → f b → f b
 (↬) = (*>)
 infixl 4 ↬
+
+
+-- * Async stuff
+
+-- | Run in background thread without waiting for it
+--
+-- Reports to stderr if background thread fails with an exception.
+inBackground ∷ MonadUnliftIO m ⇒ m () → m ()
+inBackground = inBackgroundGeneric async
+
+-- | Run in background thread without waiting for it
+--   but use @forkOS@ instead of @forkIO@
+--
+-- Reports to stderr if background thread fails with an exception.
+inBackgroundBound ∷ MonadUnliftIO m ⇒ m () → m ()
+inBackgroundBound = inBackgroundGeneric asyncBound
+
+inBackgroundGeneric ∷ MonadUnliftIO m ⇒ (m () → m (Async ())) → m () → m ()
+inBackgroundGeneric asyncFn m =
+  void ∘ asyncFn $ m `catch` \(e ∷ SomeException) →
+    liftIO ∘ hPutStrLn stderr $
+      "Background thread failed with this exception: " ⋄ show e

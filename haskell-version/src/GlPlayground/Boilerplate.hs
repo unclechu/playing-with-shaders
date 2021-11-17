@@ -25,8 +25,6 @@ import Control.Monad (unless, when)
 import Control.Monad.Fix (fix)
 
 import UnliftIO (MonadUnliftIO, withRunInIO, liftIO)
-import UnliftIO.Async (async)
-import UnliftIO.Exception (SomeException, catch)
 import UnliftIO.IORef (IORef, newIORef, readIORef, atomicModifyIORef')
 
 import qualified Graphics.Rendering.OpenGL.GL as GL
@@ -137,24 +135,17 @@ mkWindow onEventCallback = do
             isRecognized ←
               liftIO $ GLFW.getKeyScancode GLFW.Key'Escape • (≠ (-1))
 
-            _ ← async $
-              let
-                errHandler (e ∷ SomeException) =
-                  logError $ "Background task failed: " ⋄ fromString (show e)
+            inBackground $ do
+              wasUpdated ←
+                atomicModifyIORef' hasLayoutRef $
+                  maybe (Just isRecognized, True) (\x → (Just x, False))
 
-                task = do
-                  wasUpdated ←
-                    atomicModifyIORef' hasLayoutRef $
-                      maybe (Just isRecognized, True) (\x → (Just x, False))
-
-                  when (wasUpdated ∧ not isRecognized) $
-                    logWarning $ T.unwords
-                      [ "It seems that there is a problem with recognizing"
-                      , "keyboard layout (couldn’t get scan code of Escape"
-                      , "key). Default QWERTY layout is used instead."
-                      ]
-              in
-                task `catch` errHandler
+              when (wasUpdated ∧ not isRecognized) $
+                logWarning $ T.unwords
+                  [ "It seems that there is a problem with recognizing"
+                  , "keyboard layout (couldn’t get scan code of Escape"
+                  , "key). Default QWERTY layout is used instead."
+                  ]
 
             pure $ if isRecognized then key else fromDefaultLayout
 

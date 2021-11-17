@@ -33,7 +33,7 @@ import Control.Monad.Reader (MonadReader, ReaderT, runReaderT, ask)
 
 import UnliftIO (MonadUnliftIO)
 import UnliftIO.Async (async, wait, asyncBound)
-import UnliftIO.Exception (SomeException, finally)
+import UnliftIO.Exception (SomeException, finally, catch)
 import UnliftIO.MVar (MVar, takeMVar, putMVar, newEmptyMVar)
 
 import Control.Monad.Logger
@@ -48,17 +48,27 @@ import Control.Monad.Logger
   , toLogStr
   )
 
-import System.IO (stderr)
+import System.Exit (ExitCode (ExitFailure))
+import System.IO (hPutStrLn, stderr)
+import System.Posix.Process (exitImmediately)
 
 import GlPlayground.Utils
-import UnliftIO.Concurrent (threadDelay)
 
 
-withLogger ∷ MonadUnliftIO m ⇒ MyLoggerMonad m () → m ()
+withLogger ∷ (MonadUnliftIO m, MonadFail m) ⇒ MyLoggerMonad m () → m ()
 withLogger m = do
   messageBus ← newEmptyMVar
-  let terminateLogger = void ∘ async $ putMVar messageBus Nothing
-  let runM = runReaderT (runMyLoggerMonad m) messageBus
+
+  let
+    runM = runReaderT (runMyLoggerMonad m) messageBus
+
+    fatalErrorHandler (e ∷ SomeException) = liftIO $
+      hPutStrLn stderr
+        ("Fatal failure of attempt to terminate the logger: " ⋄ show e)
+          `finally` exitImmediately (ExitFailure 1)
+
+    terminateLogger =
+      void ∘ async $ putMVar messageBus Nothing `catch` fatalErrorHandler
 
   loggerThread ← async $ logger messageBus
   mThread ← asyncBound $ runM `finally` terminateLogger
@@ -99,13 +109,13 @@ logger messageBus = liftIO ∘ fix $ \again →
 
 
 logInfo ∷ (HasCallStack, MonadLogger m, MonadUnliftIO m) ⇒ Text → m ()
-logInfo = withFrozenCallStack (void ∘ async ∘ logInfoCS callStack)
+logInfo = withFrozenCallStack (inBackground ∘ logInfoCS callStack)
 
 logError ∷ (HasCallStack, MonadLogger m, MonadUnliftIO m) ⇒ Text → m ()
-logError = withFrozenCallStack (void ∘ async ∘ logErrorCS callStack)
+logError = withFrozenCallStack (inBackground ∘ logErrorCS callStack)
 
 logWarning ∷ (HasCallStack, MonadLogger m, MonadUnliftIO m) ⇒ Text → m ()
-logWarning = withFrozenCallStack (void ∘ async ∘ logWarnCS callStack)
+logWarning = withFrozenCallStack (inBackground ∘ logWarnCS callStack)
 
 
 type MessageBus = MVar (Maybe LogLine)

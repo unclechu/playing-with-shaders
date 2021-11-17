@@ -45,6 +45,7 @@ library
     , safe-exceptions
     , stm
     , text
+    , unix
     , unliftio
     , unliftio-core
   hs-source-dirs:
