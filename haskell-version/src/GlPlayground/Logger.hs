@@ -13,6 +13,10 @@ module GlPlayground.Logger
      , logError
      , logWarning
      , MyLoggerMonad
+     , MonadLogger
+
+     -- * Utils
+     , loggedFail
      ) where
 
 import GHC.Stack (HasCallStack, callStack, withFrozenCallStack)
@@ -124,3 +128,14 @@ instance MonadIO m ⇒ MonadLogger (MyLoggerMonad m) where
     messageBus ← ask
     liftIO ∘ putMVar messageBus $
       Just (location, logSource, logLevel, toLogStr logStr)
+
+
+-- * Utils
+
+loggedFail
+  ∷ (HasCallStack, MonadFail m, MonadLogger m, MonadUnliftIO m)
+  ⇒ String
+  → m a
+loggedFail msg = withFrozenCallStack $ do
+  logError ∘ fromString $ msg
+  fail msg

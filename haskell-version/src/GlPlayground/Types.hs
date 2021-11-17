@@ -1,5 +1,11 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UnicodeSyntax #-}
 
 module GlPlayground.Types
@@ -7,11 +13,25 @@ module GlPlayground.Types
      , State (..)
      , mkState
      , HasCanvasSize (..)
+
+     -- * Type level
+     , Descendible (..)
+
+     -- * Shaders
+     , TypedShader (..)
+
+     -- * Utils
+     , Evidence (..)
+     , Attest (..)
+     , WindowContextEvidence
      ) where
 
-import UnliftIO (MonadUnliftIO)
-import UnliftIO.IORef (IORef, newIORef, readIORef)
+import Data.Proxy (Proxy (Proxy))
 
+import UnliftIO (MonadUnliftIO)
+import UnliftIO.IORef (IORef, newIORef)
+
+import qualified Graphics.Rendering.OpenGL.GL.Shaders as GLSL
 import qualified Graphics.UI.GLFW as GLFW
 
 import GlPlayground.Utils
@@ -55,3 +75,40 @@ mkState
 class HasCanvasSize a where
   getOldCanvasSize ∷ a → (Int, Int)
   getNewCanvasSize ∷ a → (Int, Int)
+
+
+-- * Type level
+
+class Descendible (a ∷ k) where
+  descend ∷ Proxy a → k
+
+
+-- * Shaders
+
+newtype TypedShader (t ∷ GLSL.ShaderType)
+  = TypedShader { unTypedShader ∷ GLSL.Shader }
+
+instance Descendible 'GLSL.VertexShader where
+  descend Proxy = GLSL.VertexShader
+
+instance Descendible 'GLSL.FragmentShader where
+  descend Proxy = GLSL.FragmentShader
+
+
+-- * Utils
+
+class Evidence source evidence where
+  evidence ∷ source → evidence
+
+class Attest evidence where
+  attest ∷ evidence → ()
+
+
+-- The constructor must not be exported
+data WindowContextEvidence = WindowContextEvidence
+
+instance Evidence GLFW.Window WindowContextEvidence where
+  evidence _window = WindowContextEvidence
+
+instance Attest WindowContextEvidence where
+  attest WindowContextEvidence = ()

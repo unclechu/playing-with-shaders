@@ -27,18 +27,21 @@ library
     GlPlayground.Boilerplate
     GlPlayground.Logger
     GlPlayground.Render
+    GlPlayground.Shaders
     GlPlayground.Types
     GlPlayground.Utils
   build-depends:
-    , GLFW-b
-    , OpenGL
     , base
     , base-unicode-symbols
     , bytestring
+    , file-embed
+    , GLFW-b
     , lifted-async
     , monad-control
     , monad-logger
     , mtl
+    , OpenGL
+    , OpenGLRaw
     , safe-exceptions
     , stm
     , text
