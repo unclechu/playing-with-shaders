@@ -30,7 +30,7 @@ import GlPlayground.Utils
 
 runApp ∷ IO ()
 runApp = withLogger $ do
-  state@State{..} ← mkState
+  state@State{..} ← mkState ()
 
   window ← mkWindow $ \case
     Event'CanvasResize w h →
@@ -107,8 +107,8 @@ update
   ∷ (MonadUnliftIO m, MonadFail m, MonadLogger m)
   ⇒ GLSL.Program
   → (GL.UniformLocation, GL.UniformLocation, GL.UniformLocation)
-  → State
-  → m State
+  → (State subState)
+  → m (State subState)
 update program (wwVarLoc, whVarLoc, timeVarLoc) state@State{..} = do
   canvasSize ← readIORef state'CanvasSizeRef
 

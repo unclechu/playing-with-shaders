@@ -46,27 +46,30 @@ data Event
   deriving stock (Eq, Show)
 
 
-data State
+-- | Generic application state type
+data State subState
   = State
   { state'CanvasSizeRef ∷ IORef (Int, Int)
   , state'OldCanvasSize ∷ (Int, Int)
   , state'NewCanvasSize ∷ (Int, Int)
   , state'OldTime ∷ Double
   , state'NewTime ∷ Double
+  , state'SubState ∷ subState
   }
 
-instance HasCanvasSize State where
+instance HasCanvasSize (State subState) where
   getOldCanvasSize State {..} = state'OldCanvasSize
   getNewCanvasSize State {..} = state'NewCanvasSize
 
-mkState ∷ MonadUnliftIO m ⇒ m State
-mkState
+mkState ∷ MonadUnliftIO m ⇒ subState → m (State subState)
+mkState subState
   = State
   ∘ newIORef initialCanvasSize
   ↜ pure initialCanvasSize
   ↜ pure initialCanvasSize
   ↜ pure initialTime
   ↜ pure initialTime
+  ↜ pure subState
   where
     initialCanvasSize = (0, 0)
     initialTime = 0

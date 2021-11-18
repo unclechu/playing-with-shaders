@@ -15,20 +15,8 @@ import GlPlayground.Types
 import GlPlayground.Utils
 
 
-render ∷ MonadIO m ⇒ (GL.BufferObject, Int) → State → m ()
+render ∷ MonadIO m ⇒ (GL.BufferObject, Int) → State subState → m ()
 render (vertexBuffer, vertexesCount) State{..} = liftIO $ do
-  {-GL.renderPrimitive GL.Triangles $ do
-    let
-      anim = 0.1 × time
-      x = 0.5
-
-    GL.color $ GL.Color3 @Double 0.1 0.2 0.3
-    GL.vertex $ GL.Vertex3 0 (rh $ x + anim) 0
-    GL.color $ GL.Color3 @Double 0.3 0.2 0.1
-    GL.vertex $ GL.Vertex3 (rw $ (-x) + (-anim)) (rh $ (-x) + (-anim)) 0
-    GL.color $ GL.Color3 @Double 0.3 0.3 0.3
-    GL.vertex $ GL.Vertex3 (rw $ x + anim) (rh $ (-x) + (-anim)) 0-}
-
   -- GL.bindBuffer GL.ArrayBuffer GL.$=! Just vertexBuffer
 
   -- GL.vertexAttribArray (GL.AttribLocation 0) GL.$=! GL.Enabled
@@ -49,3 +37,16 @@ render (vertexBuffer, vertexesCount) State{..} = liftIO $ do
 
     (w, h) = state'NewCanvasSize
     time = state'NewTime
+
+    _testTriangle =
+      GL.renderPrimitive GL.Triangles $ do
+        let
+          anim = 0.1 × time
+          x = 0.5
+
+        GL.color $ GL.Color3 @Double 0.1 0.2 0.3
+        GL.vertex $ GL.Vertex3 0 (rh $ x + anim) 0
+        GL.color $ GL.Color3 @Double 0.3 0.2 0.1
+        GL.vertex $ GL.Vertex3 (rw $ (-x) + (-anim)) (rh $ (-x) + (-anim)) 0
+        GL.color $ GL.Color3 @Double 0.3 0.3 0.3
+        GL.vertex $ GL.Vertex3 (rw $ x + anim) (rh $ (-x) + (-anim)) 0
