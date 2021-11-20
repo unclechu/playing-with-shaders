@@ -107,7 +107,7 @@ update
   ∷ (MonadUnliftIO m, MonadFail m, MonadLogger m)
   ⇒ GLSL.Program
   → (GL.UniformLocation, GL.UniformLocation, GL.UniformLocation)
-  → (State subState)
+  → State subState
   → m (State subState)
 update program (wwVarLoc, whVarLoc, timeVarLoc) state@State{..} = do
   canvasSize ← readIORef state'CanvasSizeRef
