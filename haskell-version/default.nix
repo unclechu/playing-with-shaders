@@ -3,10 +3,15 @@ let sources = import ../nix/sources.nix; in
 , callPackage ? pkgs.callPackage
 , lib ? pkgs.lib
 
+, haskell ? pkgs.haskell
+, justStaticExecutables ? haskell.lib.justStaticExecutables
 , callCabal2nix ? pkgs.callCabal2nix
 , cabal-install ? pkgs.cabal-install
-, haskellPackages ? pkgs.haskellPackages
-, justStaticExecutables ? pkgs.haskell.lib.justStaticExecutables
+
+# “easy-hls” doesn’t support GHC 8.10.4 which was the default one in the
+# “release-21.05” nixpkgs pin at the moment of writing this.
+# P.S. Some dependencies are broken in “haskell.packages.ghc901”.
+, haskellPackages ? haskell.packages.ghc8107
 
 , easy-hls-nix ? sources.easy-hls-nix
 , getRelativeFileName ? (callPackage ../nix/utils.nix {}).getRelativeFileName

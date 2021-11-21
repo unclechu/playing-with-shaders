@@ -5,10 +5,10 @@
         "homepage": "",
         "owner": "jkachmar",
         "repo": "easy-hls-nix",
-        "rev": "edd5710946d46ea40810ef9a708b084d7e05a118",
-        "sha256": "0hxn487rh6czsp6zpkw3lap609s4mrfrbm9bhp8dngwqp2bmig5c",
+        "rev": "7c123399ef8a67dc0e505d9cf7f2c7f64f1cd847",
+        "sha256": "0402ih4jla62l59g80f21fmgklj7rv0hmn82347qzms18lffbjpx",
         "type": "tarball",
-        "url": "https://github.com/jkachmar/easy-hls-nix/archive/edd5710946d46ea40810ef9a708b084d7e05a118.tar.gz",
+        "url": "https://github.com/jkachmar/easy-hls-nix/archive/7c123399ef8a67dc0e505d9cf7f2c7f64f1cd847.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "nixpkgs": {
@@ -17,10 +17,10 @@
         "homepage": "",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "95eed9b64eee24975b880308065654fd059f22c3",
-        "sha256": "1x59xdxh2vrnhh4j29nyq7npq70v178j5acdm2zsgamcagm3qif9",
+        "rev": "d5c4e868ce3783a95bc1dd898777f09af7ff69ee",
+        "sha256": "1n8n92d9s6xr04b3xvlm35wv79yi8v52m7qx0dx6whaj6qbdcy2i",
         "type": "tarball",
-        "url": "https://github.com/NixOS/nixpkgs/archive/95eed9b64eee24975b880308065654fd059f22c3.tar.gz",
+        "url": "https://github.com/NixOS/nixpkgs/archive/d5c4e868ce3783a95bc1dd898777f09af7ff69ee.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     }
 }
