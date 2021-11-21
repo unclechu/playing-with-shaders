@@ -10,7 +10,10 @@
 
 module GlPlayground.Boilerplate
      ( mkWindow
+     , listenToEvents
      , mainLoop
+
+     -- * Shader programs
      , mkShader
      , mkProgram
      ) where
@@ -36,11 +39,8 @@ import GlPlayground.Types
 import GlPlayground.Utils
 
 
-mkWindow
-  ∷ ∀ m. (MonadUnliftIO m, MonadLogger m, MonadFail m)
-  ⇒ (Event → m ())
-  → m GLFW.Window
-mkWindow onEventCallback = do
+mkWindow ∷ (MonadUnliftIO m, MonadLogger m, MonadFail m) ⇒ m GLFW.Window
+mkWindow = do
   logInfo "Initializing GLFW…"
   liftIO GLFW.init >>= flip unless (loggedFail "Failed to initialize GLFW!")
 
@@ -61,63 +61,68 @@ mkWindow onEventCallback = do
     liftIO (GLFW.createWindow 640 480 "Playing with GLSL" Nothing Nothing)
       >>= maybe (loggedFail "Failed to create GLFW window!") pure
 
-  do -- Setting event callbacks
-
-    logInfo "Setting GLFW key event callback…"
-    withRunInIO $ \runInIO → do
-      -- For some reason keys are not recognized.
-      -- See: https://github.com/bsl/GLFW-b/issues/94
-      hasLayoutRef ← newIORef (Nothing @Bool)
-
-      GLFW.setKeyCallback window ∘ Just $
-        \_ originalKey scancode keyState mods → runInIO $ do
-          key ← keyLayoutResolve hasLayoutRef originalKey scancode
-
-          if key ≡ GLFW.Key'Escape ∧ keyState ≡ GLFW.KeyState'Pressed
-             then do
-               logInfo $ T.unwords
-                 [ "Received escape key press event."
-                 , "Marking window as closing…"
-                 ]
-               liftIO $ GLFW.setWindowShouldClose window True
-             else
-               onEventCallback $ Event'Key key scancode keyState mods
-
-    logInfo "Setting GLFW mouse positioning callback…"
-    withRunInIO $ \runInIO →
-      GLFW.setCursorPosCallback window ∘ Just $ \_ x y →
-        runInIO ∘ onEventCallback $ Event'MousePos x y
-
-    logInfo "Setting GLFW mouse scroll callback…"
-    withRunInIO $ \runInIO →
-      GLFW.setCursorPosCallback window ∘ Just $ \_ x y →
-        runInIO ∘ onEventCallback $ Event'MouseScroll x y
-
-    logInfo "Setting GLFW mouse button callback…"
-    withRunInIO $ \runInIO →
-      GLFW.setMouseButtonCallback window ∘ Just $ \_ a b c →
-        runInIO ∘ onEventCallback $ Event'MouseButton a b c
-
-    logInfo "Setting GLFW framebuffer resize callback…"
-    withRunInIO $ \runInIO →
-      GLFW.setFramebufferSizeCallback window $ Just $ \_ w h →
-        runInIO ∘ onEventCallback $ Event'CanvasResize w h
-
-  logInfo "Dispatching initial framebuffer resize event…"
-  withRunInIO $ \runInIO →
-    GLFW.getFramebufferSize window >>=
-      runInIO ∘ onEventCallback ∘ uncurry Event'CanvasResize
-
   logInfo "Making GLFW window be current OpenGL context…"
   liftIO ∘ GLFW.makeContextCurrent $ Just window
-
-  -- TODO: init glew
 
   -- No vsync (tearing is fixed at deriver’s level)
   logInfo "Disabling vertical synchronization…"
   liftIO $ GLFW.swapInterval (-1)
 
   pure window
+
+
+listenToEvents
+  ∷ ∀ m. (MonadUnliftIO m, MonadLogger m)
+  ⇒ GLFW.Window
+  → (Event → m ())
+  → m ()
+listenToEvents window onEventCallback = do
+  logInfo "Binding event callbacks…"
+
+  logInfo "Setting GLFW key event callback…"
+  withRunInIO $ \runInIO → do
+    -- For some reason keys are not recognized.
+    -- See: https://github.com/bsl/GLFW-b/issues/94
+    hasLayoutRef ← newIORef (Nothing @Bool)
+
+    GLFW.setKeyCallback window ∘ Just $
+      \_ originalKey scancode keyState mods → runInIO $ do
+        key ← keyLayoutResolve hasLayoutRef originalKey scancode
+
+        if key ≡ GLFW.Key'Escape ∧ keyState ≡ GLFW.KeyState'Pressed
+           then do
+             logInfo $ T.unwords
+               [ "Received escape key press event."
+               , "Marking window as closing…"
+               ]
+             liftIO $ GLFW.setWindowShouldClose window True
+           else
+             onEventCallback $ Event'Key key scancode keyState mods
+
+  logInfo "Setting GLFW mouse positioning callback…"
+  withRunInIO $ \runInIO →
+    GLFW.setCursorPosCallback window ∘ Just $ \_ x y →
+      runInIO ∘ onEventCallback $ Event'MousePos x y
+
+  logInfo "Setting GLFW mouse scroll callback…"
+  withRunInIO $ \runInIO →
+    GLFW.setCursorPosCallback window ∘ Just $ \_ x y →
+      runInIO ∘ onEventCallback $ Event'MouseScroll x y
+
+  logInfo "Setting GLFW mouse button callback…"
+  withRunInIO $ \runInIO →
+    GLFW.setMouseButtonCallback window ∘ Just $ \_ a b c →
+      runInIO ∘ onEventCallback $ Event'MouseButton a b c
+
+  logInfo "Setting GLFW framebuffer resize callback…"
+  withRunInIO $ \runInIO →
+    GLFW.setFramebufferSizeCallback window $ Just $ \_ w h →
+      runInIO ∘ onEventCallback $ Event'CanvasResize w h
+
+  logInfo "Dispatching initial framebuffer resize event…"
+  withRunInIO $ \runInIO →
+    GLFW.getFramebufferSize window >>=
+      runInIO ∘ onEventCallback ∘ uncurry Event'CanvasResize
 
   where
     keyLayoutResolve ∷ IORef (Maybe Bool) → GLFW.Key → Int → m GLFW.Key
@@ -197,6 +202,8 @@ mainLoop window initialState updateFn renderFn finalizerFn = do
   logInfo "Terminating GLFW…"
   liftIO GLFW.terminate
 
+
+-- * Shader programs
 
 -- This function needs "WindowContextEvidence" because if you call it before
 -- window is created you get compilation failure with empty error message.

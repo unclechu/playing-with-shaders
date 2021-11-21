@@ -32,14 +32,16 @@ runApp ∷ IO ()
 runApp = withLogger $ do
   state@State{..} ← mkState ()
 
-  window ← mkWindow $ \case
+  window ← mkWindow
+
+  program ← mandelbrotSetShaderProgram (evidence window)
+  attribLocation ← liftIO ∘ GL.get $ GL.attribLocation program "position"
+
+  listenToEvents window $ \case
     Event'CanvasResize w h →
       writeIORef state'CanvasSizeRef (w, h)
 
     _ → pure ()
-
-  program ← mandelbrotSetShaderProgram (evidence window)
-  attribLocation ← liftIO ∘ GL.get $ GL.attribLocation program "position"
 
   let
     triangleVertexes ∷ [GL.GLfloat]
