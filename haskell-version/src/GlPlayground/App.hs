@@ -10,124 +10,63 @@ module GlPlayground.App
      ( runApp
      ) where
 
-import Control.Monad (when)
+import Control.Monad ((<=<))
 
 import UnliftIO (MonadUnliftIO, liftIO)
-import UnliftIO.Foreign (withArrayLen, nullPtr)
 import UnliftIO.IORef (writeIORef, readIORef)
 
-import qualified Graphics.Rendering.OpenGL.GL as GL
-import qualified Graphics.Rendering.OpenGL.GL.Shaders as GLSL
 import qualified Graphics.UI.GLFW as GLFW
 
 import GlPlayground.Boilerplate
 import GlPlayground.Logger
-import GlPlayground.Render
-import GlPlayground.Shaders
 import GlPlayground.Types
 import GlPlayground.Utils
+import qualified GlPlayground.Game.MandelbrotSet as MandelbrotSet
+import qualified GlPlayground.Game.TestTriangle as TestTriangle
 
 
 runApp ∷ IO ()
 runApp = withLogger $ do
-  state@State{..} ← mkState ()
-
   window ← mkWindow
 
-  program ← mandelbrotSetShaderProgram (evidence window)
-  attribLocation ← liftIO ∘ GL.get $ GL.attribLocation program "position"
+  (subStatic, subState) ← game'Initialize (evidence window)
+  static@Static{..} ← mkStatic subStatic
+  let state = mkState subState
 
-  listenToEvents window $ \case
-    Event'CanvasResize w h →
-      writeIORef state'CanvasSizeRef (w, h)
+  listenToEvents window $ \ev → do
+    case ev of
+      Event'CanvasResize w h → writeIORef static'CanvasSizeRef (w, h)
+      _ → pure ()
 
-    _ → pure ()
-
-  let
-    triangleVertexes ∷ [GL.GLfloat]
-    triangleVertexes =
-      [ -1, -1
-      , -1, 1
-      , 1, 1
-
-      , 1, 1
-      , 1, -1
-      , -1, -1
-      ]
-      -- [ -1, -1, 1
-      -- , -1 , 1, 1
-      -- , 1, 1, 1
-
-      -- , 1, 1, 1
-      -- , 1, -1, 1
-      -- , -1, -1, 1
-      -- ]
-
-    createVertexBuffer
-      ∷ MonadUnliftIO m
-      ⇒ [GL.GLfloat]
-      → m (GL.BufferObject, Int)
-    createVertexBuffer vertexes = do
-      bufferObject ← liftIO GL.genObjectName
-      liftIO $ GL.bindBuffer GL.ArrayBuffer GL.$=! Just bufferObject
-
-      vertexesCount ← withArrayLen vertexes $ \count arr → do
-        liftIO $ GL.bufferData GL.ArrayBuffer GL.$=!
-          (fromIntegral count × 4, arr, GL.StaticDraw)
-        pure (count `div` dimensions)
-
-      GL.vertexAttribArray attribLocation GL.$=! GL.Enabled
-
-      GL.vertexAttribPointer attribLocation GL.$=!
-        ( GL.ToFloat
-        , GL.VertexArrayDescriptor (fromIntegral dimensions) GL.Float 0 nullPtr
-        )
-
-      pure (bufferObject, vertexesCount)
-
-      where
-        dimensions = 2 ∷ Int
-
-  (vertexBuffer, vertexesCount) ← createVertexBuffer triangleVertexes
-  GL.bindBuffer GL.ArrayBuffer GL.$=! Just vertexBuffer
-  GL.clearColor GL.$=! GL.Color4 0 0 0 1 -- Black
-
-  locations ← liftIO $ (,,)
-    ∘ GLSL.uniformLocation program "ww"
-    ↜ GLSL.uniformLocation program "wh"
-    ↜ GLSL.uniformLocation program "time"
+    game'EventHandler static ev
 
   mainLoop
     window
     state
-    (update program locations)
-    (render (vertexBuffer, vertexesCount))
+    (gameUpdate static <=< update static)
+    (game'Render static)
     (pure ())
+
+
+  where
+    Game{..} = MandelbrotSet.game
+
+    gameUpdate static state =
+      game'Update static state
+        • maybe state (\x → state { state'Sub = x })
 
 
 update
   ∷ (MonadUnliftIO m, MonadFail m, MonadLogger m)
-  ⇒ GLSL.Program
-  → (GL.UniformLocation, GL.UniformLocation, GL.UniformLocation)
+  ⇒ Static subStatic
   → State subState
   → m (State subState)
-update program (wwVarLoc, whVarLoc, timeVarLoc) state@State{..} = do
-  canvasSize ← readIORef state'CanvasSizeRef
+update Static{..} state@State{..} = do
+  canvasSize ← readIORef static'CanvasSizeRef
 
   time ←
     liftIO GLFW.getTime >>=
       maybe (loggedFail "Failed to read current time!") pure
-
-  liftIO $ GLSL.currentProgram GL.$=! Just program
-
-  when (fst canvasSize ≠ fst state'NewCanvasSize) $
-    liftIO $ GLSL.uniform wwVarLoc GL.$=!
-      (fromIntegral $ fst canvasSize ∷ GL.GLint)
-  when (snd canvasSize ≠ snd state'NewCanvasSize) $
-    liftIO $ GLSL.uniform whVarLoc GL.$=!
-      (fromIntegral $ snd canvasSize ∷ GL.GLint)
-
-  liftIO $ GLSL.uniform timeVarLoc GL.$=! (time ∷ GL.GLdouble)
 
   pure state
     { state'OldCanvasSize = state'NewCanvasSize

@@ -25,9 +25,11 @@ library
   exposed-modules:
     GlPlayground.App
     GlPlayground.Boilerplate
+    GlPlayground.Game.MandelbrotSet
+    GlPlayground.Game.MandelbrotSet.ShaderProgram
+    GlPlayground.Game.MandelbrotSet.Types
+    GlPlayground.Game.TestTriangle
     GlPlayground.Logger
-    GlPlayground.Render
-    GlPlayground.Shaders
     GlPlayground.Types
     GlPlayground.Utils
   build-depends:
@@ -35,6 +37,7 @@ library
     , base-unicode-symbols
     , bytestring
     , file-embed
+    , generic-lens
     , GLFW-b
     , lifted-async
     , monad-control

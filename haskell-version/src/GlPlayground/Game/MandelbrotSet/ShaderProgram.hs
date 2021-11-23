@@ -5,8 +5,8 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UnicodeSyntax #-}
 
-module GlPlayground.Shaders
-     ( mandelbrotSetShaderProgram
+module GlPlayground.Game.MandelbrotSet.ShaderProgram
+     ( shaderProgram
      ) where
 
 import Data.Data (Proxy (Proxy))
@@ -21,11 +21,11 @@ import GlPlayground.Logger
 import GlPlayground.Types
 
 
-mandelbrotSetShaderProgram
+shaderProgram
   ∷ (MonadUnliftIO m, MonadFail m, MonadLogger m)
   ⇒ WindowContextEvidence
   → m GLSL.Program
-mandelbrotSetShaderProgram evidence' = do
+shaderProgram evidence' = do
   logInfo "Making Mandelbrot set shader program…"
 
   vertex ←

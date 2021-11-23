@@ -6,6 +6,7 @@ module GlPlayground.Utils
      , module Data.Eq.Unicode
      , module Data.Bool.Unicode
      , module Prelude.Unicode
+     , module Data.Function
 
      -- * Async stuff
      , inBackground
@@ -14,6 +15,7 @@ module GlPlayground.Utils
 
 import Data.Bool.Unicode ((∧), (∨))
 import Data.Eq.Unicode ((≡), (≠))
+import Data.Function ((&))
 import Data.Functor ((<&>), ($>))
 import Prelude.Unicode ((×), (÷))
 

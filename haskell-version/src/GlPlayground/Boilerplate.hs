@@ -13,13 +13,15 @@ module GlPlayground.Boilerplate
      , listenToEvents
      , mainLoop
 
+     , mkVertexBuffer
+
      -- * Shader programs
      , mkShader
      , mkProgram
      ) where
 
 import Data.Bifunctor (bimap)
-import Data.Proxy (Proxy)
+import Data.Proxy (Proxy (Proxy))
 import Data.String (fromString)
 import Data.Text.Encoding (encodeUtf8)
 import qualified Data.Text as T
@@ -28,6 +30,7 @@ import Control.Monad (unless, when)
 import Control.Monad.Fix (fix)
 
 import UnliftIO (MonadUnliftIO, withRunInIO, liftIO)
+import UnliftIO.Foreign (withArrayLen)
 import UnliftIO.IORef (IORef, newIORef, readIORef, atomicModifyIORef')
 
 import qualified Graphics.Rendering.OpenGL.GL as GL
@@ -201,6 +204,28 @@ mainLoop window initialState updateFn renderFn finalizerFn = do
 
   logInfo "Terminating GLFW…"
   liftIO GLFW.terminate
+
+
+mkVertexBuffer
+  ∷ ∀ m d. (MonadUnliftIO m, Descendible d)
+  ⇒ Dimensional d [GL.GLfloat]
+  → m (VertexBuffer d)
+  -- ^ Buffer object and calculated amount of vertices
+mkVertexBuffer valuesList = do
+  bufferObject ← liftIO GL.genObjectName
+  liftIO $ GL.bindBuffer GL.ArrayBuffer GL.$=! Just bufferObject
+
+  verticesCount ← withArrayLen (unDimensional valuesList) $ \count arr → do
+    liftIO $ GL.bufferData GL.ArrayBuffer GL.$=!
+      (fromIntegral count × floatSize, arr, GL.StaticDraw)
+    pure (count `div` dimensionsToNum (descend $ Proxy @d))
+
+  pure
+    $ VertexBuffer bufferObject
+    $ Dimensional @d verticesCount
+
+  where
+    floatSize = 4
 
 
 -- * Shader programs
