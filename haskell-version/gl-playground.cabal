@@ -24,7 +24,8 @@ maintainer:         lotsmanov89@gmail.com
 library
   exposed-modules:
     GlPlayground.App
-    GlPlayground.Boilerplate
+    GlPlayground.Boilerplate.Backbone
+    GlPlayground.Boilerplate.Shaders
     GlPlayground.Game.MandelbrotSet
     GlPlayground.Game.MandelbrotSet.ShaderProgram
     GlPlayground.Game.MandelbrotSet.Types

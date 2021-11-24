@@ -17,7 +17,7 @@ import UnliftIO.IORef (writeIORef, readIORef)
 
 import qualified Graphics.UI.GLFW as GLFW
 
-import GlPlayground.Boilerplate
+import GlPlayground.Boilerplate.Backbone
 import GlPlayground.Logger
 import GlPlayground.Types
 import GlPlayground.Utils

@@ -16,7 +16,7 @@ import UnliftIO (MonadUnliftIO)
 
 import qualified Graphics.Rendering.OpenGL.GL.Shaders as GLSL
 
-import GlPlayground.Boilerplate
+import GlPlayground.Boilerplate.Shaders
 import GlPlayground.Logger
 import GlPlayground.Types
 

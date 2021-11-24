@@ -18,7 +18,7 @@ import UnliftIO.Foreign (nullPtr)
 
 import qualified Graphics.Rendering.OpenGL.GL as GL
 
-import GlPlayground.Boilerplate (mkVertexBuffer)
+import GlPlayground.Boilerplate.Shaders (mkVertexBuffer)
 import GlPlayground.Game.MandelbrotSet.ShaderProgram
 import GlPlayground.Game.MandelbrotSet.Types
 
