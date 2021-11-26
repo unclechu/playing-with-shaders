@@ -10,7 +10,7 @@ module GlPlayground.App
      ( runApp
      ) where
 
-import Control.Monad ((<=<))
+import Control.Monad ((<=<), (>=>))
 
 import UnliftIO (MonadUnliftIO, liftIO)
 import UnliftIO.IORef (writeIORef, readIORef)
@@ -27,26 +27,18 @@ import qualified GlPlayground.Game.TestTriangle as TestTriangle
 
 runApp ∷ IO ()
 runApp = withLogger $ do
-  window ← mkWindow
+  mkGlApp
+    (game'Initialize >=> \(a, b) → (,) ∘ mkStatic a ↜ pure (mkState b))
+    (\static@Static{..} ev → do
+        case ev of
+          Event'CanvasResize w h → writeIORef static'CanvasSizeRef (w, h)
+          _ → pure ()
 
-  (subStatic, subState) ← game'Initialize (evidence window)
-  static@Static{..} ← mkStatic subStatic
-  let state = mkState subState
-
-  listenToEvents window $ \ev → do
-    case ev of
-      Event'CanvasResize w h → writeIORef static'CanvasSizeRef (w, h)
-      _ → pure ()
-
-    game'EventHandler static ev
-
-  mainLoop
-    window
-    state
-    (gameUpdate static <=< update static)
-    (game'Render static)
+        game'EventHandler static ev
+    )
+    (\static → gameUpdate static <=< update static)
+    (\static → game'Render static)
     (pure ())
-
 
   where
     Game{..} = MandelbrotSet.game

@@ -8,9 +8,7 @@
 {-# LANGUAGE UnicodeSyntax #-}
 
 module GlPlayground.Boilerplate.Backbone
-     ( mkWindow
-     , listenToEvents
-     , mainLoop
+     ( mkGlApp
      ) where
 
 import Data.Bifunctor (bimap)
@@ -193,3 +191,30 @@ mainLoop window initialState updateFn renderFn finalizerFn = do
 
   logInfo "Terminating GLFW…"
   liftIO GLFW.terminate
+
+
+mkGlApp
+  ∷ (MonadUnliftIO m, MonadLogger m, MonadFail m, HasCanvasSize state)
+  ⇒ (WindowContextEvidence → m (static, state))
+  -- ^ Initializer
+  → (static → Event → m ())
+  -- ^ Event handler
+  → (static → state → m state)
+  -- ^ State update callback
+  → (static → state → m ())
+  -- ^ Render callback
+  → m ()
+  -- ^ Finalizer callback
+  → m ()
+mkGlApp initializer eventHandler update render finalizer = do
+  logInfo "Making GL application window…"
+  window ← mkWindow
+
+  logInfo "Calling initializer, making static data and initial state…"
+  (static, state) ← initializer $ evidence window
+
+  logInfo "Binding events handler…"
+  listenToEvents window $ eventHandler static
+
+  logInfo "Runnin main loop…"
+  mainLoop window state (update static) (render static) finalizer
