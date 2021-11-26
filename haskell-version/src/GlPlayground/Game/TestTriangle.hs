@@ -12,7 +12,7 @@ import UnliftIO (MonadUnliftIO, MonadIO (liftIO))
 import qualified Graphics.Rendering.OpenGL.GL as GL
 
 import GlPlayground.Logger
-import GlPlayground.Types
+import GlPlayground.Game.Types
 import GlPlayground.Utils
 
 

@@ -22,6 +22,7 @@ import GlPlayground.Boilerplate.Shaders (mkVertexBuffer)
 import GlPlayground.Game.MandelbrotSet.ShaderProgram
 import GlPlayground.Game.MandelbrotSet.Types
 
+import GlPlayground.Game.Types
 import GlPlayground.Logger
 import GlPlayground.Types
 import GlPlayground.Utils

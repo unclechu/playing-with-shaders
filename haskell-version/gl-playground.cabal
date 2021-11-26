@@ -26,10 +26,12 @@ library
     GlPlayground.App
     GlPlayground.Boilerplate.Backbone
     GlPlayground.Boilerplate.Shaders
+    GlPlayground.Game
     GlPlayground.Game.MandelbrotSet
     GlPlayground.Game.MandelbrotSet.ShaderProgram
     GlPlayground.Game.MandelbrotSet.Types
     GlPlayground.Game.TestTriangle
+    GlPlayground.Game.Types
     GlPlayground.Logger
     GlPlayground.Types
     GlPlayground.Utils

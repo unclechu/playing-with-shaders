@@ -11,10 +11,7 @@
 
 module GlPlayground.Types
      ( Event (..)
-     , Static (..), mkStatic
-     , State (..), mkState
      , HasCanvasSize (..)
-     , Game (..)
 
      -- * Additional types
      , Dimensions (..), dimensionsToNum, numToDimensions
@@ -36,11 +33,7 @@ module GlPlayground.Types
 import Data.List (find)
 import Data.Proxy (Proxy (Proxy))
 
-import UnliftIO (MonadUnliftIO)
-import UnliftIO.IORef (IORef, newIORef)
-
 import qualified Graphics.Rendering.OpenGL.GL as GL
-import qualified Graphics.Rendering.OpenGL.GL.Shaders as GLSL
 import qualified Graphics.UI.GLFW as GLFW
 
 import GlPlayground.Utils
@@ -55,56 +48,9 @@ data Event
   deriving stock (Eq, Show)
 
 
-data Static subStatic
-  = Static
-  { static'CanvasSizeRef ∷ IORef (Int, Int)
-  , static'Sub ∷ {-# UNPACK #-} !subStatic
-  }
-
-mkStatic ∷ MonadUnliftIO m ⇒ subStatic → m (Static subStatic)
-mkStatic sub = Static ∘ newIORef (0, 0) ↜ pure sub
-
-
--- | Generic application state type
-data State subState
-  = State
-  { state'OldCanvasSize ∷ (Int, Int)
-  , state'NewCanvasSize ∷ (Int, Int)
-  , state'OldTime ∷ Double
-  , state'NewTime ∷ Double
-  , state'Sub ∷ {-# UNPACK #-} !subState
-  }
-
-instance HasCanvasSize (State subState) where
-  getOldCanvasSize State {..} = state'OldCanvasSize
-  getNewCanvasSize State {..} = state'NewCanvasSize
-
-mkState ∷ subState → State subState
-mkState sub
-  = State
-  { state'OldCanvasSize = initialCanvasSize
-  , state'NewCanvasSize = initialCanvasSize
-  , state'OldTime = initialTime
-  , state'NewTime = initialTime
-  , state'Sub = sub
-  }
-  where
-    initialCanvasSize = (0, 0)
-    initialTime = 0
-
-
 class HasCanvasSize a where
   getOldCanvasSize ∷ a → (Int, Int)
   getNewCanvasSize ∷ a → (Int, Int)
-
-
-data Game m subStatic subState
-  = Game
-  { game'Initialize ∷ WindowContextEvidence → m (subStatic, subState)
-  , game'EventHandler ∷ Static subStatic → Event → m ()
-  , game'Update ∷ Static subStatic → State subState → m (Maybe subState)
-  , game'Render ∷ Static subStatic → State subState → m ()
-  }
 
 
 -- * Additional types
@@ -133,6 +79,7 @@ data VertexBuffer (d ∷ Dimensions)
   = VertexBuffer
   { vertexBuffer'BufferObject ∷ GL.BufferObject
   , vertexBuffer'VerticesCount ∷ Dimensional d Int
+  -- , vertexBuffer'SizeInBytes ∷ Int
   }
 
 
@@ -144,14 +91,14 @@ class Descendible (a ∷ k) where
 
 -- * Shaders
 
-newtype TypedShader (t ∷ GLSL.ShaderType)
-  = TypedShader { unTypedShader ∷ GLSL.Shader }
+newtype TypedShader (t ∷ GL.ShaderType)
+  = TypedShader { unTypedShader ∷ GL.Shader }
 
-instance Descendible 'GLSL.VertexShader where
-  descend Proxy = GLSL.VertexShader
+instance Descendible 'GL.VertexShader where
+  descend Proxy = GL.VertexShader
 
-instance Descendible 'GLSL.FragmentShader where
-  descend Proxy = GLSL.FragmentShader
+instance Descendible 'GL.FragmentShader where
+  descend Proxy = GL.FragmentShader
 
 
 -- * Utils
