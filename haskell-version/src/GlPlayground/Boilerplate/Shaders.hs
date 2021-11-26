@@ -19,7 +19,7 @@ import qualified Data.Text as T
 
 import Control.Monad (unless)
 
-import UnliftIO (MonadUnliftIO, liftIO)
+import UnliftIO (MonadUnliftIO, MonadIO (liftIO))
 import UnliftIO.Foreign (withArrayLen)
 
 import qualified Graphics.Rendering.OpenGL.GL as GL
@@ -32,7 +32,7 @@ import GlPlayground.Utils
 -- This function needs "WindowContextEvidence" because if you call it before
 -- window is created you get compilation failure with empty error message.
 mkShader
-  ∷ ∀ m t. (MonadUnliftIO m, MonadFail m, MonadLogger m, Descendible t)
+  ∷ ∀ m t. (MonadIO m, MonadFail m, MonadLogger m, Descendible t)
   ⇒ WindowContextEvidence
   → Proxy (t ∷ GL.ShaderType)
   → T.Text
@@ -64,7 +64,7 @@ mkShader (attest → ()) (descend → shaderType) shaderSrc = do
 
 
 mkProgram
-  ∷ (MonadUnliftIO m, MonadLogger m, MonadFail m)
+  ∷ (MonadIO m, MonadLogger m, MonadFail m)
   ⇒ (TypedShader 'GL.VertexShader, TypedShader 'GL.FragmentShader)
   → m GL.Program
 mkProgram (vertex, fragment) = do

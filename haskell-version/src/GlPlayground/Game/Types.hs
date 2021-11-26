@@ -8,7 +8,7 @@ module GlPlayground.Game.Types
      , State (..), mkState
      ) where
 
-import UnliftIO (MonadUnliftIO)
+import UnliftIO (MonadIO)
 import UnliftIO.IORef (IORef, newIORef)
 
 import GlPlayground.Types
@@ -30,7 +30,7 @@ data Static subStatic
   , static'Sub ∷ {-# UNPACK #-} !subStatic
   }
 
-mkStatic ∷ MonadUnliftIO m ⇒ subStatic → m (Static subStatic)
+mkStatic ∷ MonadIO m ⇒ subStatic → m (Static subStatic)
 mkStatic sub = Static ∘ newIORef (0, 0) ↜ pure sub
 
 

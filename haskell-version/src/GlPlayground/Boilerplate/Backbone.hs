@@ -18,7 +18,7 @@ import qualified Data.Text as T
 import Control.Monad (unless, when)
 import Control.Monad.Fix (fix)
 
-import UnliftIO (MonadUnliftIO, withRunInIO, liftIO)
+import UnliftIO (MonadUnliftIO, withRunInIO, MonadIO (liftIO))
 import UnliftIO.IORef (IORef, newIORef, readIORef, atomicModifyIORef')
 
 import qualified Graphics.Rendering.OpenGL.GL as GL
@@ -146,7 +146,7 @@ listenToEvents window onEventCallback = do
 
 
 mainLoop
-  ∷ (MonadUnliftIO m, MonadLogger m, MonadFail m, HasCanvasSize state)
+  ∷ (MonadIO m, MonadLogger m, MonadFail m, HasCanvasSize state)
   ⇒ GLFW.Window
   → state
   -- ^ Initial state

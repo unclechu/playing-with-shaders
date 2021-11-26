@@ -108,14 +108,14 @@ logger messageBus = liftIO ∘ fix $ \again →
           LevelOther s → (errorFn, s)
 
 
-logInfo ∷ (HasCallStack, MonadLogger m, MonadUnliftIO m) ⇒ Text → m ()
-logInfo = withFrozenCallStack (inBackground ∘ logInfoCS callStack)
+logInfo ∷ (HasCallStack, MonadLogger m) ⇒ Text → m ()
+logInfo = withFrozenCallStack $ logInfoCS callStack
 
-logError ∷ (HasCallStack, MonadLogger m, MonadUnliftIO m) ⇒ Text → m ()
-logError = withFrozenCallStack (inBackground ∘ logErrorCS callStack)
+logError ∷ (HasCallStack, MonadLogger m) ⇒ Text → m ()
+logError = withFrozenCallStack $ logErrorCS callStack
 
-logWarning ∷ (HasCallStack, MonadLogger m, MonadUnliftIO m) ⇒ Text → m ()
-logWarning = withFrozenCallStack (inBackground ∘ logWarnCS callStack)
+logWarning ∷ (HasCallStack, MonadLogger m) ⇒ Text → m ()
+logWarning = withFrozenCallStack $ logWarnCS callStack
 
 
 type MessageBus = MVar (Maybe LogLine)
@@ -133,19 +133,16 @@ newtype MyLoggerMonad m a
     )
 
 
-instance MonadIO m ⇒ MonadLogger (MyLoggerMonad m) where
+instance MonadUnliftIO m ⇒ MonadLogger (MyLoggerMonad m) where
   monadLoggerLog location logSource logLevel logStr = do
     messageBus ← ask
-    liftIO ∘ putMVar messageBus $
+    inBackground ∘ putMVar messageBus $
       Just (location, logSource, logLevel, toLogStr logStr)
 
 
 -- * Utils
 
-loggedFail
-  ∷ (HasCallStack, MonadFail m, MonadLogger m, MonadUnliftIO m)
-  ⇒ String
-  → m a
+loggedFail ∷ (HasCallStack, MonadFail m, MonadLogger m) ⇒ String → m a
 loggedFail msg = withFrozenCallStack $ do
   logError ∘ fromString $ msg
   fail msg

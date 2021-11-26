@@ -7,7 +7,7 @@ module GlPlayground.Game.TestTriangle
      ( game
      ) where
 
-import UnliftIO (MonadUnliftIO, MonadIO (liftIO))
+import UnliftIO (MonadIO (liftIO))
 
 import qualified Graphics.Rendering.OpenGL.GL as GL
 
@@ -16,7 +16,7 @@ import GlPlayground.Game.Types
 import GlPlayground.Utils
 
 
-game ∷ (MonadUnliftIO m, MonadLogger m) ⇒ Game m () ()
+game ∷ (MonadIO m, MonadLogger m) ⇒ Game m () ()
 game
   = Game
   { game'Initialize = const initialize
@@ -26,7 +26,7 @@ game
   }
 
 
-initialize ∷ (MonadUnliftIO m, MonadLogger m) ⇒ m ((), ())
+initialize ∷ (MonadIO m, MonadLogger m) ⇒ m ((), ())
 initialize = mempty ↤ do
   logInfo "Playing test triangle…"
   GL.clearColor GL.$=! GL.Color4 0 0 0 1 -- Black
