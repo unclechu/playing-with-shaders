@@ -20,7 +20,7 @@ import qualified Data.Text as T
 import Control.Monad (unless)
 
 import UnliftIO (MonadUnliftIO, MonadIO (liftIO))
-import UnliftIO.Foreign (withArrayLen)
+import UnliftIO.Foreign (withArrayLen, Storable (sizeOf))
 
 import qualified Graphics.Rendering.OpenGL.GL as GL
 
@@ -107,22 +107,26 @@ mkProgram (vertex, fragment) = do
 
 
 mkVertexBuffer
-  ∷ ∀ m d. (MonadUnliftIO m, Descendible d)
-  ⇒ Dimensional d [GL.GLfloat]
+  ∷ ∀ m d a. (MonadUnliftIO m, Descendible d, Storable a, Num a)
+  ⇒ Dimensional d [a]
   → m (VertexBuffer d)
-  -- ^ Buffer object and calculated amount of vertices
 mkVertexBuffer valuesList = do
   bufferObject ← liftIO GL.genObjectName
   liftIO $ GL.bindBuffer GL.ArrayBuffer GL.$=! Just bufferObject
 
-  verticesCount ← withArrayLen (unDimensional valuesList) $ \count arr → do
-    liftIO $ GL.bufferData GL.ArrayBuffer GL.$=!
-      (fromIntegral count × floatSize, arr, GL.StaticDraw)
-    pure (count `div` dimensionsToNum (descend $ Proxy @d))
+  (totalSize, verticesCount) ←
+    withArrayLen (unDimensional valuesList) $ \count arr → do
+      let totalSize = Octets $ unOctets itemSize × count
 
-  pure
-    $ VertexBuffer bufferObject
-    $ Dimensional @d verticesCount
+      liftIO $ GL.bufferData GL.ArrayBuffer GL.$=!
+        (fromInteger ∘ toInteger $ totalSize, arr, GL.StaticDraw)
+
+      pure (totalSize, count `div` dimensionsToNum (descend $ Proxy @d))
+
+  pure $ VertexBuffer
+    bufferObject
+    (Dimensional @d verticesCount)
+    totalSize
 
   where
-    floatSize = 4
+    itemSize = Octets $ sizeOf @a 0

@@ -8,6 +8,7 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UnicodeSyntax #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module GlPlayground.Types
      ( Event (..)
@@ -17,6 +18,7 @@ module GlPlayground.Types
      , Dimensions (..), dimensionsToNum, numToDimensions
      , Dimensional (..)
      , VertexBuffer (..)
+     , Octets (..)
 
      -- * Type level
      , Descendible (..)
@@ -79,8 +81,13 @@ data VertexBuffer (d ∷ Dimensions)
   = VertexBuffer
   { vertexBuffer'BufferObject ∷ GL.BufferObject
   , vertexBuffer'VerticesCount ∷ Dimensional d Int
-  -- , vertexBuffer'SizeInBytes ∷ Int
+  , vertexBuffer'SizeInOctets ∷ Octets
   }
+
+
+newtype Octets = Octets { unOctets ∷ Int }
+  deriving stock (Eq, Show, Ord)
+  deriving newtype (Num, Integral, Enum, Bounded, Real)
 
 
 -- * Type level

@@ -27,7 +27,7 @@ data Game m subStatic subState
 data Static subStatic
   = Static
   { static'CanvasSizeRef ∷ IORef (Int, Int)
-  , static'Sub ∷ {-# UNPACK #-} !subStatic
+  , static'Sub ∷ !subStatic
   }
 
 mkStatic ∷ MonadIO m ⇒ subStatic → m (Static subStatic)
@@ -36,11 +36,11 @@ mkStatic sub = Static ∘ newIORef (0, 0) ↜ pure sub
 
 data State subState
   = State
-  { state'OldCanvasSize ∷ (Int, Int)
-  , state'NewCanvasSize ∷ (Int, Int)
-  , state'OldTime ∷ Double
-  , state'NewTime ∷ Double
-  , state'Sub ∷ {-# UNPACK #-} !subState
+  { state'OldCanvasSize ∷ !(Int, Int)
+  , state'NewCanvasSize ∷ !(Int, Int)
+  , state'OldTime ∷ !Double
+  , state'NewTime ∷ !Double
+  , state'Sub ∷ !subState
   }
   deriving stock (Eq, Show, Ord) -- Must be plain data in order to satisfy these
 
