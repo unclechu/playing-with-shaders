@@ -1,5 +1,7 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE EmptyDataDecls #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE NoStarIsType #-}
 {-# LANGUAGE PolyKinds #-}
@@ -13,7 +15,7 @@
 
 -- | Some generic type-level helpers
 module GlPlayground.TypeLevel
-     ( FP, fpFloatVal, fpDoubleVal, type (.)
+     ( FP, TRational, type (.), type (%)
 
      -- * Descent
      , Descendible (..)
@@ -25,6 +27,7 @@ import GHC.TypeLits
 
 import Data.Kind (Type)
 import Data.Proxy (Proxy (Proxy))
+import Data.Ratio ((%))
 
 
 -- | Type-level floating-point number
@@ -38,32 +41,51 @@ import Data.Proxy (Proxy (Proxy))
 -- @
 data FP (integer ∷ Nat) (remainder ∷ Nat)
 
+instance
+  ( TRational n d ~ FpToRational (FP i r)
+  , KnownNat n
+  , KnownNat d
+  ) ⇒ DescendibleAs (FP i r) Float
+  where
+  descendAs Proxy = rationalToFloat (natVal $ Proxy @n) (natVal $ Proxy @d)
+
+instance
+  ( TRational n d ~ FpToRational (FP i r)
+  , KnownNat n
+  , KnownNat d
+  ) ⇒ DescendibleAs (FP i r) Double
+  where
+  descendAs Proxy = rationalToDouble (natVal $ Proxy @n) (natVal $ Proxy @d)
+
+instance
+  ( TRational n d ~ FpToRational (FP i r)
+  , KnownNat n
+  , KnownNat d
+  ) ⇒ DescendibleAs (FP i r) Rational
+  where
+  descendAs Proxy = natVal (Proxy @n) % natVal (Proxy @d)
+
+
 -- | Type-level rational value
 data TRational (numerator ∷ Nat) (denominator ∷ Nat)
 
-fpFloatVal
-  ∷ ∀ n d i r .
-  ( TRational n d ~ FpToRational (FP i r)
-  , KnownNat n
-  , KnownNat d
-  )
-  ⇒ Proxy (FP i r)
-  → Float
-fpFloatVal Proxy = rationalToFloat (natVal $ Proxy @n) (natVal $ Proxy @d)
+instance (KnownNat n, KnownNat d) ⇒ DescendibleAs (TRational n d) Rational where
+  descendAs Proxy = natVal (Proxy @n) % natVal (Proxy @d)
 
-fpDoubleVal
-  ∷ ∀ n d i r .
-  ( TRational n d ~ FpToRational (FP i r)
-  , KnownNat n
-  , KnownNat d
-  )
-  ⇒ Proxy (FP i r)
-  → Double
-fpDoubleVal Proxy = rationalToDouble (natVal $ Proxy @n) (natVal $ Proxy @d)
+instance (KnownNat n, KnownNat d) ⇒ DescendibleAs (TRational n d) Float where
+  descendAs Proxy = rationalToFloat (natVal $ Proxy @n) (natVal $ Proxy @d)
+
+instance (KnownNat n, KnownNat d) ⇒ DescendibleAs (TRational n d) Double where
+  descendAs Proxy = rationalToDouble (natVal $ Proxy @n) (natVal $ Proxy @d)
+
 
 -- | A hack to write floating point numbers in type-level like in term-level
 type family (.) a b ∷ Type where
-  a.b = FP a b
+  a . b = FP a b
+
+type family (%) a b ∷ Type where
+  a % b = TRational a b
+
 
 type family FpToRational (a ∷ k1) ∷ k2 where
   FpToRational (FP i r) = FpToRational '(i, 1, r)
@@ -84,5 +106,9 @@ type family FpToRational (a ∷ k1) ∷ k2 where
 class Descendible (a ∷ k) where
   descend ∷ Proxy a → k
 
+
 class DescendibleAs (a ∷ k) (as ∷ Type) where
   descendAs ∷ Proxy a → as
+
+  default descendAs :: (Descendible a, k ~ as) => Proxy a -> as
+  descendAs = descend
