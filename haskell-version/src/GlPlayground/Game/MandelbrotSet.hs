@@ -24,6 +24,7 @@ import GlPlayground.Game.MandelbrotSet.Types
 
 import GlPlayground.Game.Types
 import GlPlayground.Logger
+import GlPlayground.TypeLevel
 import GlPlayground.Types
 import GlPlayground.Utils
 

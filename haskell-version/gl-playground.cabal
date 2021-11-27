@@ -33,6 +33,7 @@ library
     GlPlayground.Game.TestTriangle
     GlPlayground.Game.Types
     GlPlayground.Logger
+    GlPlayground.TypeLevel
     GlPlayground.Types
     GlPlayground.Utils
   build-depends:

@@ -1,14 +1,19 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE EmptyDataDecls #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NoStarIsType #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeInType #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE UnicodeSyntax #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module GlPlayground.Types
      ( Event (..)
@@ -18,10 +23,8 @@ module GlPlayground.Types
      , Dimensions (..), dimensionsToNum, numToDimensions
      , Dimensional (..)
      , VertexBuffer (..)
+     , KnownVertexBuffer (..)
      , Octets (..)
-
-     -- * Type level
-     , Descendible (..)
 
      -- * Shaders
      , TypedShader (..)
@@ -32,12 +35,17 @@ module GlPlayground.Types
      , WindowContextEvidence
      ) where
 
+import GHC.TypeLits
+
+import Data.Kind (Type)
 import Data.List (find)
 import Data.Proxy (Proxy (Proxy))
+import Data.Type.Bool (If)
 
 import qualified Graphics.Rendering.OpenGL.GL as GL
 import qualified Graphics.UI.GLFW as GLFW
 
+import GlPlayground.TypeLevel
 import GlPlayground.Utils
 
 
@@ -85,15 +93,19 @@ data VertexBuffer (d ∷ Dimensions)
   }
 
 
+data KnownVertexBuffer (d ∷ Dimensions) (verticesCount ∷ Nat)
+  = KnownVertexBuffer
+  { knownVertexBuffer'BufferObject ∷ GL.BufferObject
+  , knownVertexBuffer'SizeInOctets ∷ Octets
+  }
+
+
 newtype Octets = Octets { unOctets ∷ Int }
   deriving stock (Eq, Show, Ord)
   deriving newtype (Num, Integral, Enum, Bounded, Real)
 
 
 -- * Type level
-
-class Descendible (a ∷ k) where
-  descend ∷ Proxy a → k
 
 
 -- * Shaders

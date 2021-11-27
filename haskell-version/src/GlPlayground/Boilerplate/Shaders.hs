@@ -3,6 +3,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeInType #-}
 {-# LANGUAGE UnicodeSyntax #-}
 {-# LANGUAGE ViewPatterns #-}
 
@@ -11,6 +12,8 @@ module GlPlayground.Boilerplate.Shaders
      , mkProgram
      , mkVertexBuffer
      ) where
+
+import GHC.TypeLits
 
 import Data.Proxy (Proxy (Proxy))
 import Data.String (fromString)
@@ -25,6 +28,7 @@ import UnliftIO.Foreign (withArrayLen, Storable (sizeOf))
 import qualified Graphics.Rendering.OpenGL.GL as GL
 
 import GlPlayground.Logger
+import GlPlayground.TypeLevel
 import GlPlayground.Types
 import GlPlayground.Utils
 
