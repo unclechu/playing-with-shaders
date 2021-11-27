@@ -1,8 +1,9 @@
-{-# LANGUAGE UnicodeSyntax #-}
+{-# LANGUAGE NoStarIsType #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE UnicodeSyntax #-}
 
 module GlPlayground.Utils
-     ( (⋄), (∘), (•), (↤), (↦), (↜), (↝), (↫), (↬)
+     ( (⋄), (∘), (•), (↤), (↦), (↜), (↝), (↫), (↬), type (×)
      , module Data.Eq.Unicode
      , module Data.Bool.Unicode
      , module Prelude.Unicode
@@ -12,6 +13,8 @@ module GlPlayground.Utils
      , inBackground
      , inBackgroundBound
      ) where
+
+import GHC.TypeLits
 
 import Data.Bool.Unicode ((∧), (∨))
 import Data.Eq.Unicode ((≡), (≠))
@@ -74,6 +77,8 @@ infixl 4 ↫
 (↬) ∷ Applicative f ⇒ f a → f b → f b
 (↬) = (*>)
 infixl 4 ↬
+
+type a × b = a * b
 
 
 -- * Async stuff

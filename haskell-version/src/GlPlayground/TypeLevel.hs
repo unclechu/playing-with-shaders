@@ -29,6 +29,8 @@ import Data.Kind (Type)
 import Data.Proxy (Proxy (Proxy))
 import Data.Ratio ((%))
 
+import GlPlayground.Utils
+
 
 -- | Type-level floating-point number
 --
@@ -93,8 +95,8 @@ type family FpToRational (a ∷ k1) ∷ k2 where
   FpToRational '(numerator, denominator, 0) = TRational numerator denominator
   FpToRational '(numerator, denominator, remainder) =
     TRational
-      (numerator * (10 ^ FpToRational '(0, remainder)) + remainder)
-      (denominator * (10 ^ FpToRational '(0, remainder)))
+      (numerator × (10 ^ FpToRational '(0, remainder)) + remainder)
+      (denominator × (10 ^ FpToRational '(0, remainder)))
 
   -- Calculate exponent
   FpToRational '(exponent, 0) = exponent
