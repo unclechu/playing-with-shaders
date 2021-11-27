@@ -19,7 +19,7 @@ module GlPlayground.TypeLevel
      , Nat, KnownNat, natVal, Div, Mod
      , Symbol, KnownSymbol, symbolVal
      , module Data.Type.Bool
-     , Signed (..), type P, type N
+     , Signed (..), type P, type N, AsSigned, ShrinkSigned
 
      -- * Arithmetic operators
      , type (×), type (^), type (÷), type (+), type (-)
@@ -117,6 +117,20 @@ data Signed a = Positive a | Negative a
 type P x = 'Positive x
 type N x = 'Negative x
 
+type family AsSigned (x ∷ k) ∷ Signed a where
+  AsSigned (x ∷ Nat) = P x
+  AsSigned (i . r) = P (i . r)
+  AsSigned (n % d) = P (n % d)
+  AsSigned (P x) = P x
+  AsSigned (N x) = N x
+
+type family ShrinkSigned (x ∷ Signed k1) ∷ Signed k2 where
+  ShrinkSigned (P (P x)) = ShrinkSigned (P x)
+  ShrinkSigned (P (N x)) = ShrinkSigned (N x)
+  ShrinkSigned (N (P x)) = ShrinkSigned (N x)
+  ShrinkSigned (N (N x)) = ShrinkSigned (P x)
+  ShrinkSigned x = x
+
 
 -- | Named type-level value wrapper
 data V (s ∷ Symbol) (a ∷ k)
@@ -127,8 +141,8 @@ type family ToRational (a ∷ k1) ∷ k2 where
 
   ToRational (x ∷ Nat) = x % 1
 
-  ToRational ('Positive x) = 'Positive (AsRational (ToRational x))
-  ToRational ('Negative x) = 'Negative (AsRational (ToRational x))
+  ToRational (P x) = P (AsRational (ToRational x))
+  ToRational (N x) = N (AsRational (ToRational x))
 
   ToRational (i . r) = AsRational (ToRational (V "Transform" '(i, 1, r)))
 
@@ -192,21 +206,43 @@ type family (a ∷ k1) × (b ∷ k2) ∷ k3 where
   (a ∷ Nat) × b = AsRational (ToRational a) × b
   a × (b ∷ Nat) = b × a
 
-  'Positive a × 'Positive b = 'Positive (a × b)
-  'Negative a × 'Negative b = 'Positive (a × b)
-  'Positive a × 'Negative b = 'Negative (a × b)
-  'Negative a × 'Positive b = 'Positive b × 'Negative a
+  P a × P b = P (a × b)
+  N a × N b = P (a × b)
+  P a × N b = N (a × b)
+  N a × P b = P b × N a
 
-  'Positive a × b = 'Positive (a × b)
-  'Negative a × b = 'Negative (a × b)
-  a × 'Positive b = 'Positive b × a
-  a × 'Negative b = 'Negative b × a
+  P a × b = P (a × b)
+  N a × b = N (a × b)
+  a × P b = P b × a
+  a × N b = N b × a
 
 
-type family (a ∷ k1) ^ (b ∷ k2) ∷ k3 where
-  (a ∷ Nat) ^ (b ∷ Nat) = a TL.^ b
-  (an % ad) ^ (b ∷ Nat) = (an ^ b) % (ad ^ b)
-  (ai . ar) ^ b = AsRational (ai . ar) ^ b
+type family (a ∷ k1) ^ (exp ∷ k2) ∷ k3 where
+  (a ∷ Nat) ^ (exp ∷ Nat) = a TL.^ exp
+  (an % ad) ^ (exp ∷ Nat) = (an ^ exp) % (ad ^ exp)
+  (ai . ar) ^ exp = AsRational (ai . ar) ^ exp
+
+  -- Fractional exponent is not supported since it’s not supported by
+  -- term-level (^) operator.
+  -- a ^ (en % ed) = …
+  -- a ^ (ei . er) = a ^ AsRational (ei . er)
+
+  -- Mind that term-level "Rational" throws an exception for negative exponent
+  P a ^ P exp = P (a ^ exp)
+  N a ^ N exp = TL.TypeError ('TL.Text "TODO")
+  P a ^ N exp = P (Reciprocal a ^ exp)
+  N a ^ P exp = TL.TypeError ('TL.Text "TODO")
+
+  P a ^ exp = P (a ^ exp)
+  N a ^ exp = N a ^ P exp
+  a ^ P exp = P (a ^ exp)
+  a ^ N exp = P a ^ N exp
+
+
+type family Reciprocal (a ∷ k1) ∷ Type where
+  Reciprocal (a ∷ Nat) = 1 % a
+  Reciprocal (i . r) = Reciprocal (AsRational (i . r))
+  Reciprocal (n % d) = d % n
 
 
 type family (a ∷ k1) ÷ (b ∷ k2) ∷ k3 where
@@ -269,6 +305,9 @@ instance Descendible 'GL.FragmentShader where descend Proxy = GL.FragmentShader
 instance DescendibleAs 'GL.FragmentShader GL.ShaderType
 
 
+instance KnownNat n ⇒ DescendibleAs n Rational where
+  descendAs Proxy = natVal (Proxy @n) % 1
+
 instance KnownNat n ⇒ DescendibleAs n Integer where
   descendAs Proxy = natVal $ Proxy @n
 
@@ -279,8 +318,8 @@ instance KnownSymbol s ⇒ DescendibleAs s String where
   descendAs Proxy = symbolVal $ Proxy @s
 
 
-instance DescendibleAs a as ⇒ DescendibleAs ('Positive a) as where
+instance DescendibleAs a as ⇒ DescendibleAs (P a) as where
   descendAs Proxy = descendAs $ Proxy @a
 
-instance (Num as, DescendibleAs a as) ⇒ DescendibleAs ('Negative a) as where
+instance (Num as, DescendibleAs a as) ⇒ DescendibleAs (N a) as where
   descendAs Proxy = negate $ descendAs $ Proxy @a
