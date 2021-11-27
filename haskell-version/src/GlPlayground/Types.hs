@@ -37,10 +37,8 @@ module GlPlayground.Types
 
 import GHC.TypeLits
 
-import Data.Kind (Type)
 import Data.List (find)
 import Data.Proxy (Proxy (Proxy))
-import Data.Type.Bool (If)
 
 import qualified Graphics.Rendering.OpenGL.GL as GL
 import qualified Graphics.UI.GLFW as GLFW
@@ -112,12 +110,6 @@ newtype Octets = Octets { unOctets ∷ Int }
 
 newtype TypedShader (t ∷ GL.ShaderType)
   = TypedShader { unTypedShader ∷ GL.Shader }
-
-instance Descendible 'GL.VertexShader where
-  descend Proxy = GL.VertexShader
-
-instance Descendible 'GL.FragmentShader where
-  descend Proxy = GL.FragmentShader
 
 
 -- * Utils
