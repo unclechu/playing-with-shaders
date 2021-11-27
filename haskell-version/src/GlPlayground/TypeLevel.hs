@@ -19,6 +19,7 @@ module GlPlayground.TypeLevel
      , Nat, KnownNat, natVal, Div, Mod
      , Symbol, KnownSymbol, symbolVal
      , module Data.Type.Bool
+     , Signed (..), type P, type N
 
      -- * Arithmetic operators
      , type (×), type (^), type (÷), type (+), type (-)
@@ -52,8 +53,8 @@ import qualified Graphics.Rendering.OpenGL.GL as GL
 -- “FP” stands for “(F)loating (P)oint”.
 --
 -- @
--- frFloatVal (Proxy @(Fr 1 2)) == 1.2
--- frDoubleVal (Proxy @(Fr 1 2)) == 1.2
+-- (descendAs (Proxy @(1 . 2)) ∷ Float)  == 1.2
+-- (descendAs (Proxy @(1 . 2)) ∷ Double) == 1.2
 -- @
 --
 -- WARNING! Mind that you can’t write down such number as @1.01@
@@ -103,11 +104,18 @@ instance (KnownNat n, KnownNat d) ⇒ DescendibleAs (n % d) Double where
 type i . r = FP i r
 type n % d = TRational n d
 
-type family AsFP (a ∷ Type) ∷ Type where AsFP (i . d) = i . d
+type family AsFP (a ∷ Type) ∷ Type where
+  AsFP (i . d) = i . d
 
 type family AsRational (a ∷ Type) ∷ Type where
   AsRational (n % d) = n % d
   AsRational x = AsRational (ToRational x)
+
+
+data Signed a = Positive a | Negative a
+
+type P x = 'Positive x
+type N x = 'Negative x
 
 
 -- | Named type-level value wrapper
@@ -116,7 +124,12 @@ data V (s ∷ Symbol) (a ∷ k)
 
 type family ToRational (a ∷ k1) ∷ k2 where
   ToRational (n % d) = n % d -- Identity
+
   ToRational (x ∷ Nat) = x % 1
+
+  ToRational ('Positive x) = 'Positive (AsRational (ToRational x))
+  ToRational ('Negative x) = 'Negative (AsRational (ToRational x))
+
   ToRational (i . r) = AsRational (ToRational (V "Transform" '(i, 1, r)))
 
   ToRational (V "Transform" '(numerator, denominator, 0)) =
@@ -174,10 +187,20 @@ type family (a ∷ k1) × (b ∷ k2) ∷ k3 where
   (an % ad) × (bn % bd) = (an × bn) % (ad × bd)
 
   (ai . ar) × b = AsRational (ai . ar) × b
-  a × (bi . br) = a × AsRational (bi . br)
+  a × (bi . br) = (bi . br) × a
 
-  (a ∷ Nat) × (bn % bd) = AsRational (ToRational a) × (bn % bd)
-  (an % ad) × (b ∷ Nat) = (an % ad) × AsRational (ToRational b)
+  (a ∷ Nat) × b = AsRational (ToRational a) × b
+  a × (b ∷ Nat) = b × a
+
+  'Positive a × 'Positive b = 'Positive (a × b)
+  'Negative a × 'Negative b = 'Positive (a × b)
+  'Positive a × 'Negative b = 'Negative (a × b)
+  'Negative a × 'Positive b = 'Positive b × 'Negative a
+
+  'Positive a × b = 'Positive (a × b)
+  'Negative a × b = 'Negative (a × b)
+  a × 'Positive b = 'Positive b × a
+  a × 'Negative b = 'Negative b × a
 
 
 type family (a ∷ k1) ^ (b ∷ k2) ∷ k3 where
@@ -254,3 +277,10 @@ instance KnownNat n ⇒ DescendibleAs n Natural where
 
 instance KnownSymbol s ⇒ DescendibleAs s String where
   descendAs Proxy = symbolVal $ Proxy @s
+
+
+instance DescendibleAs a as ⇒ DescendibleAs ('Positive a) as where
+  descendAs Proxy = descendAs $ Proxy @a
+
+instance (Num as, DescendibleAs a as) ⇒ DescendibleAs ('Negative a) as where
+  descendAs Proxy = negate $ descendAs $ Proxy @a
