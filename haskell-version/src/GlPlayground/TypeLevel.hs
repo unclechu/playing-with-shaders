@@ -19,7 +19,7 @@ module GlPlayground.TypeLevel
      , Nat, KnownNat, natVal, Div, Mod
      , Symbol, KnownSymbol, symbolVal
      , Signed (..), type P, type N, ToSigned, ShrinkSigned
-     , Reciprocal, Even, Odd, Length
+     , LCD, Reciprocal, Even, Odd, Length
      , type (≤)
 
      , module Data.Type.Bool
@@ -69,7 +69,7 @@ import qualified Graphics.Rendering.OpenGL.GL as GL
 --
 -- WARNING! Mind that you can’t write down such number as @1.01@
 -- (remainder with leading zeroes). For this cases use "TRational".
--- You can do something like @ToRational (1 + (1 % 100))@.
+-- You can do something like @1 + (1 % 100) :: TRational@.
 data FP = Nat :. Nat
 
 -- | Type-level "Rational"
@@ -157,27 +157,31 @@ type family ToSignedRational (a ∷ k) ∷ Signed TRational where
 
 
 -- | Find least common denominator
-type family LCD (a ∷ k1) (b ∷ k2) ∷ Nat where
-  LCD (a ∷ Nat) a = a
-  LCD (a ∷ Nat) (b ∷ Nat) = LCD 1 '(a, b)
+--
+-- Takes two denominators and returns common denominator for both.
+type family LCD (ad ∷ ka) (bd ∷ kb) ∷ Nat where
+  LCD (a ∷ Nat) a = a -- Denominators are equal, nothing to do
+  LCD (a ∷ Nat) (b ∷ Nat) = LCD (V "Recur" 1) '(a, b)
 
-  LCD (step ∷ Nat) '(a ∷ Nat, b ∷ Nat) =
-    LCD step ('Left '((a × step) `Mod` b, a, b))
+  LCD (V "Recur" (step ∷ Nat)) '(a ∷ Nat, b ∷ Nat) =
+    LCD (V "Try left" step) '((a × step) `Mod` b, a, b)
 
-  LCD (step ∷ Nat) ('Left '(0, a ∷ Nat, b ∷ Nat)) =
+  -- Found it
+  LCD (V "Try left" (step ∷ Nat)) '(0, a ∷ Nat, b ∷ Nat) =
     a × step ∷ Nat
 
-  LCD (step ∷ Nat) ('Left '(_ ∷ Nat, a ∷ Nat, b ∷ Nat)) =
-    LCD step ('Right '((b × step) `Mod` a, a, b))
+  LCD (V "Try left" (step ∷ Nat)) '(_ ∷ Nat, a ∷ Nat, b ∷ Nat) =
+    LCD (V "Try right" step) '((b × step) `Mod` a, a, b)
 
-  LCD (step ∷ Nat) ('Right '(0, a ∷ Nat, b ∷ Nat)) =
+  -- Found it
+  LCD (V "Try right" (step ∷ Nat)) '(0, a ∷ Nat, b ∷ Nat) =
     b × step ∷ Nat
 
-  LCD (step ∷ Nat) ('Right '(_ ∷ Nat, a ∷ Nat, b ∷ Nat)) =
-    LCD (step + 1 ∷ Nat) '(a, b)
+  LCD (V "Try right" (step ∷ Nat)) '(_ ∷ Nat, a ∷ Nat, b ∷ Nat) =
+    LCD (V "Recur" (step + 1 ∷ Nat)) '(a, b)
 
 
-type family Reciprocal (a ∷ k1) ∷ TRational where
+type family Reciprocal (a ∷ k) ∷ TRational where
   Reciprocal (a ∷ Nat) = 1 % a
   Reciprocal (i . r) = Reciprocal (ToTRational (i . r))
   Reciprocal (n % d) = d % n
