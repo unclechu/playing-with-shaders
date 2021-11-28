@@ -18,8 +18,12 @@ module GlPlayground.TypeLevel
      ( FP, TRational, type (.), type (%), AsFP, AsRational, ToRational
      , Nat, KnownNat, natVal, Div, Mod
      , Symbol, KnownSymbol, symbolVal
-     , module Data.Type.Bool
      , Signed (..), type P, type N, AsSigned, ShrinkSigned
+     , Reciprocal, Even, Odd
+     , type (≡), type (≠)
+
+     , module Data.Type.Bool
+     , module Data.Type.Equality
 
      -- * Arithmetic operators
      , type (×), type (^), type (÷), type (+), type (-)
@@ -42,6 +46,7 @@ import Data.Kind (Type)
 import Data.Proxy (Proxy (Proxy))
 import Data.Ratio ((%))
 import Data.Type.Bool
+import Data.Type.Equality
 import Numeric.Natural (Natural)
 
 import qualified Graphics.Rendering.OpenGL.GL as GL
@@ -190,6 +195,26 @@ type family LCD (a ∷ k1) (b ∷ k2) ∷ Nat where
     LCD (step + 1 ∷ Nat) '(a, b)
 
 
+type a ≡ b = a == b
+type a ≠ b = Not (a == b)
+
+
+type family Reciprocal (a ∷ k1) ∷ Type where
+  Reciprocal (a ∷ Nat) = 1 % a
+  Reciprocal (i . r) = Reciprocal (AsRational (i . r))
+  Reciprocal (n % d) = d % n
+
+
+type family Even (a ∷ k) ∷ Bool where
+  Even (a ∷ Nat) = (a `Mod` 2) ≡ 0
+  Even (P (a ∷ Nat)) = (a `Mod` 2) ≡ 0
+  Even (N (a ∷ Nat)) = (a `Mod` 2) ≡ 0
+
+
+type family Odd (a ∷ k) ∷ Bool where
+  Odd a = Not (Even a)
+
+
 -- * Arithmetic operators
 --
 -- Polymorphic type-level operators.
@@ -229,20 +254,14 @@ type family (a ∷ k1) ^ (exp ∷ k2) ∷ k3 where
 
   -- Mind that term-level "Rational" throws an exception for negative exponent
   P a ^ P exp = P (a ^ exp)
-  N a ^ N exp = TL.TypeError ('TL.Text "TODO")
+  N a ^ N exp = If (Even exp) (P (Reciprocal a ^ exp)) (N (Reciprocal a ^ exp))
   P a ^ N exp = P (Reciprocal a ^ exp)
-  N a ^ P exp = TL.TypeError ('TL.Text "TODO")
+  N a ^ P exp = If (Even exp) (P (a ^ exp)) (N (a ^ exp))
 
   P a ^ exp = P (a ^ exp)
   N a ^ exp = N a ^ P exp
   a ^ P exp = P (a ^ exp)
   a ^ N exp = P a ^ N exp
-
-
-type family Reciprocal (a ∷ k1) ∷ Type where
-  Reciprocal (a ∷ Nat) = 1 % a
-  Reciprocal (i . r) = Reciprocal (AsRational (i . r))
-  Reciprocal (n % d) = d % n
 
 
 type family (a ∷ k1) ÷ (b ∷ k2) ∷ k3 where
