@@ -15,18 +15,21 @@
 
 -- | Some generic type-level helpers
 module GlPlayground.TypeLevel
-     ( FP, TRational, type (.), type (%), AsFP, AsRational, ToRational
+     ( FP, TRational, ToTRational, type (.), type (%)
      , Nat, KnownNat, natVal, Div, Mod
      , Symbol, KnownSymbol, symbolVal
-     , Signed (..), type P, type N, AsSigned, ShrinkSigned
+     , Signed (..), type P, type N, ToSigned, ShrinkSigned
      , Reciprocal, Even, Odd, Length
-     , type (≡), type (≠), type (≤)
+     , type (≤)
 
      , module Data.Type.Bool
      , module Data.Type.Equality
 
      -- * Arithmetic operators
      , type (×), type (^), type (÷), type (+), type (-)
+
+     -- * Unicode type-level operators
+     , type (≡), type (≠)
 
      -- * Descent
      , Descendible (..)
@@ -35,6 +38,7 @@ module GlPlayground.TypeLevel
      ) where
 
 import GHC.Float (rationalToFloat, rationalToDouble)
+import GHC.Real (Ratio ((:%)))
 import qualified GHC.TypeLits as TL
 import qualified GHC.TypeNats as TN
 
@@ -65,57 +69,29 @@ import qualified Graphics.Rendering.OpenGL.GL as GL
 --
 -- WARNING! Mind that you can’t write down such number as @1.01@
 -- (remainder with leading zeroes). For this cases use "TRational".
--- You can do something like @AsRational (1 + (1 % 100))@.
-data FP (integer ∷ Nat) (remainder ∷ Nat)
+-- You can do something like @ToRational (1 + (1 % 100))@.
+data FP = Nat :. Nat
 
-instance
-  ( n % d ~ AsRational (i . r)
-  , KnownNat n
-  , KnownNat d
-  ) ⇒ DescendibleAs (i . r) Float
-  where
-  descendAs Proxy = rationalToFloat (natVal $ Proxy @n) (natVal $ Proxy @d)
-
-instance
-  ( n % d ~ AsRational (i . r)
-  , KnownNat n
-  , KnownNat d
-  ) ⇒ DescendibleAs (i . r) Double
-  where
-  descendAs Proxy = rationalToDouble (natVal $ Proxy @n) (natVal $ Proxy @d)
-
-instance
-  ( n % d ~ AsRational (i . r)
-  , KnownNat n
-  , KnownNat d
-  ) ⇒ DescendibleAs (i . r) Rational
-  where
-  descendAs Proxy = natVal (Proxy @n) % natVal (Proxy @d)
+-- | Type-level "Rational"
+type TRational = Ratio Nat
 
 
 -- | Type-level rational value
-data TRational (numerator ∷ Nat) (denominator ∷ Nat)
-
-instance (KnownNat n, KnownNat d) ⇒ DescendibleAs (n % d) Rational where
-  descendAs Proxy = natVal (Proxy @n) % natVal (Proxy @d)
-
-instance (KnownNat n, KnownNat d) ⇒ DescendibleAs (n % d) Float where
-  descendAs Proxy = rationalToFloat (natVal $ Proxy @n) (natVal $ Proxy @d)
-
-instance (KnownNat n, KnownNat d) ⇒ DescendibleAs (n % d) Double where
-  descendAs Proxy = rationalToDouble (natVal $ Proxy @n) (natVal $ Proxy @d)
+-- data TRational = TRational { numerator ∷ Nat, denominator ∷ Nat }
+-- data TRational (numerator ∷ Nat) (denominator ∷ Nat)
 
 
 -- | A hack to write floating point numbers in type-level like in term-level
-type i . r = FP i r
-type n % d = TRational n d
+--
+-- * @i@ — integer
+-- * @r@ — remainder
+type i . r = i ':. r
 
-type family AsFP (a ∷ Type) ∷ Type where
-  AsFP (i . d) = i . d
-
-type family AsRational (a ∷ Type) ∷ Type where
-  AsRational (n % d) = n % d
-  AsRational x = AsRational (ToRational x)
+-- | Term-level-like alias for @Rational@ constructor
+--
+-- * @n@ — numerator
+-- * @d@ — denominator
+type n % d = n ':% d
 
 
 data Signed a = Positive a | Negative a
@@ -123,12 +99,12 @@ data Signed a = Positive a | Negative a
 type P x = 'Positive x
 type N x = 'Negative x
 
-type family AsSigned (x ∷ k) ∷ Signed a where
-  AsSigned (x ∷ Nat) = P x
-  AsSigned (i . r) = P (i . r)
-  AsSigned (n % d) = P (n % d)
-  AsSigned (P x) = P x
-  AsSigned (N x) = N x
+type family ToSigned (x ∷ k) ∷ Signed a where
+  ToSigned (x ∷ Nat) = P x
+  ToSigned (i . r) = P (i . r)
+  ToSigned (n % d) = P (n % d)
+  ToSigned (P x) = P x
+  ToSigned (N x) = N x
 
 type family ShrinkSigned (x ∷ Signed k1) ∷ Signed k2 where
   ShrinkSigned (P (P x)) = ShrinkSigned (P x)
@@ -139,40 +115,45 @@ type family ShrinkSigned (x ∷ Signed k1) ∷ Signed k2 where
 
 
 -- | Named type-level value wrapper
+--
+-- Helps to avoid
 data V (s ∷ Symbol) (a ∷ k)
 
 
-type family ToRational (a ∷ k1) ∷ k2 where
-  ToRational (n % d) = n % d -- Identity
+-- | Convert some number to "TRational".
+--
+-- * @n@ — numerator
+-- * @d@ — denominator
+-- * @r@ — remainder
+-- * @e@ — exponent
+-- * @i@ — integer
+-- * @r@ — remainder
+type family ToTRational (a ∷ k) ∷ TRational where
+  ToTRational (n % d) = n % d -- Identity
+  ToTRational (x ∷ Nat) = x % 1
 
-  ToRational (x ∷ Nat) = x % 1
+  ToTRational (i . r) = ToTRational (V "Transform" '(i, 1, r))
 
-  ToRational (P x) = P (AsRational (ToRational x))
-  ToRational (N x) = N (AsRational (ToRational x))
+  ToTRational (V "Transform" '(n, d, 0)) = n % d
+  ToTRational (V "Transform" '(n ∷ Nat, d ∷ Nat, r ∷ Nat)) =
+    ToTRational (V "WithExponent" '(GetExponentFor10 0 r, n, d, r))
 
-  ToRational (i . r) = AsRational (ToRational (V "Transform" '(i, 1, r)))
+  ToTRational (V "WithExponent" '(e ∷ Nat, n ∷ Nat, d ∷ Nat, r ∷ Nat))
+    = ((n × (10 ^ e ∷ Nat) ∷ Nat) + r ∷ Nat)
+    % (d × (10 ^ e ∷ Nat) ∷ Nat)
 
-  ToRational (V "Transform" '(numerator, denominator, 0)) =
-    numerator % denominator
-  ToRational (V "Transform" '(numerator, denominator, remainder)) =
-    AsRational
-      (ToRational
-        (V "WithExponent"
-          '( ToRational (V "GetExponent" '(0, remainder)) ∷ Nat
-           , numerator ∷ Nat
-           , denominator ∷ Nat
-           , remainder ∷ Nat
-           )))
 
-  ToRational
-    (V "WithExponent"
-      '(exponent ∷ Nat, numerator ∷ Nat, denominator ∷ Nat, remainder ∷ Nat))
-    = ((numerator × (10 ^ exponent ∷ Nat) ∷ Nat) + remainder ∷ Nat)
-    % (denominator × (10 ^ exponent ∷ Nat) ∷ Nat)
+type family GetExponentFor10 (e ∷ Nat) (r ∷ Nat) ∷ Nat where
+  GetExponentFor10 e 0 = e
+  GetExponentFor10 e r = GetExponentFor10 (e + 1) (r `Div` 10)
 
-  ToRational (V "GetExponent" '(exponent ∷ Nat, 0)) = exponent ∷ Nat
-  ToRational (V "GetExponent" '(exponent ∷ Nat, n ∷ Nat)) =
-    ToRational (V "GetExponent" '(exponent + 1 ∷ Nat, n `Div` 10)) ∷ Nat
+
+type family ToSignedRational (a ∷ k) ∷ Signed TRational where
+  ToSignedRational (P x) = P (ToTRational x)
+  ToSignedRational (N x) = N (ToTRational x)
+  ToSignedRational (n % d) = P (ToTRational (n % d))
+  ToSignedRational (i . r) = P (ToTRational (i . r))
+  ToSignedRational (x ∷ Nat) = P (ToTRational x)
 
 
 -- | Find least common denominator
@@ -196,13 +177,9 @@ type family LCD (a ∷ k1) (b ∷ k2) ∷ Nat where
     LCD (step + 1 ∷ Nat) '(a, b)
 
 
-type a ≡ b = a == b
-type a ≠ b = Not (a == b)
-
-
-type family Reciprocal (a ∷ k1) ∷ Type where
+type family Reciprocal (a ∷ k1) ∷ TRational where
   Reciprocal (a ∷ Nat) = 1 % a
-  Reciprocal (i . r) = Reciprocal (AsRational (i . r))
+  Reciprocal (i . r) = Reciprocal (ToTRational (i . r))
   Reciprocal (n % d) = d % n
 
 
@@ -227,15 +204,22 @@ type family Length (list ∷ [a]) ∷ Nat where
 --
 -- Sometimes you have to annotate kind explicitly to help GHC to infer it.
 
-type family (a ∷ k1) × (b ∷ k2) ∷ k3 where
+-- | Generic polymorphic type-level multiplication operator
+--
+-- @kr@ is one of:
+--
+-- * "Nat" — when @ka@ and @kb@ are both "Nat"
+-- * "TRational" — when @ka@ and/or @kb@ is either "Rational" or "FP"
+-- * "Signed" of one of the above
+type family (a ∷ ka) × (b ∷ kb) ∷ kr where
   (a ∷ Nat) × (b ∷ Nat) = a TL.* b
   (an % ad) × (bn % bd) = (an × bn) % (ad × bd)
 
-  (ai . ar) × b = AsRational (ai . ar) × b
-  a × (bi . br) = (bi . br) × a
+  (ai . ar) × b = ToTRational (ai . ar) × b
+  a × (bi . br) = (bi . br) × a -- Reuse previous pattern
 
-  (a ∷ Nat) × b = AsRational (ToRational a) × b
-  a × (b ∷ Nat) = b × a
+  (a ∷ Nat) × b = ToTRational a × b
+  a × (b ∷ Nat) = b × a -- Reuse previous pattern
 
   P a × P b = P (a × b)
   N a × N b = P (a × b)
@@ -248,17 +232,29 @@ type family (a ∷ k1) × (b ∷ k2) ∷ k3 where
   a × N b = N b × a
 
 
-type family (a ∷ k1) ^ (exp ∷ k2) ∷ k3 where
+-- | Generic polymorphic type-level exponent operator
+--
+-- @kb@ (@exp@) is either:
+--
+-- * "Nat"
+-- * "Signed Nat"
+--
+-- @kr@ is one of:
+--
+-- * "Nat" — when @ka@ and @kb@ are both "Nat"
+-- * "TRational" — when @ka@ is "TRational" or "FP" or ("Signed" of any of these)
+-- * "Signed" of one of the above
+type family (a ∷ ka) ^ (exp ∷ kb) ∷ kr where
   (a ∷ Nat) ^ (exp ∷ Nat) = a TL.^ exp
   (an % ad) ^ (exp ∷ Nat) = (an ^ exp) % (ad ^ exp)
-  (ai . ar) ^ exp = AsRational (ai . ar) ^ exp
+  (ai . ar) ^ exp = ToTRational (ai . ar) ^ exp
 
   -- Fractional exponent is not supported since it’s not supported by
   -- term-level (^) operator.
   -- a ^ (en % ed) = …
-  -- a ^ (ei . er) = a ^ AsRational (ei . er)
+  -- a ^ (ei . er) = a ^ ToTRational (ei . er)
 
-  -- Mind that term-level "Rational" throws an exception for negative exponent
+  -- Mind that term-level "TRational" throws an exception for negative exponent.
   P a ^ P exp = P (a ^ exp)
   N a ^ N exp = If (Even exp) (P (Reciprocal a ^ exp)) (N (Reciprocal a ^ exp))
   P a ^ N exp = P (Reciprocal a ^ exp)
@@ -270,14 +266,20 @@ type family (a ∷ k1) ^ (exp ∷ k2) ∷ k3 where
   a ^ N exp = P a ^ N exp
 
 
-type family (a ∷ k1) ÷ (b ∷ k2) ∷ k3 where
+-- | Generic polymorphic type-level division operator
+--
+-- @kr@ is one of:
+--
+-- * "TRational"
+-- * "Signed TRational"
+type family (a ∷ ka) ÷ (b ∷ kb) ∷ kr where
   (an % ad) ÷ (bn % bd) = (an × bd) % (ad × bn)
 
-  (ai . ar) ÷ b = AsRational (ai . ar) ÷ b
-  a ÷ (bi . br) = a ÷ AsRational (bi . br)
+  (ai . ar) ÷ b = ToTRational (ai . ar) ÷ b
+  a ÷ (bi . br) = a ÷ ToTRational (bi . br)
 
-  (a ∷ Nat) ÷ b = AsRational (ToRational a) ÷ b
-  a ÷ (b ∷ Nat) = a ÷ AsRational (ToRational b)
+  (a ∷ Nat) ÷ b = ToTRational a ÷ b
+  a ÷ (b ∷ Nat) = a ÷ ToTRational b
 
   P a ÷ P b = P (a ÷ b)
   P a ÷ N b = N (a ÷ b)
@@ -290,7 +292,14 @@ type family (a ∷ k1) ÷ (b ∷ k2) ∷ k3 where
   a ÷ N b = P a ÷ N b
 
 
-type family (a ∷ k1) + (b ∷ k2) ∷ k3 where
+-- | Generic polymorphic type-level addition operator
+--
+-- @kr@ is one of:
+--
+-- * "Nat" — when @ka@ and @kb@ are both "Nat"
+-- * "TRational" — when @ka@ and/or @kb@ is either "TRational" or "FP"
+-- * "Signed" of one of the above
+type family (a ∷ ka) + (b ∷ kb) ∷ kr where
   (a ∷ Nat) + (b ∷ Nat) = a TL.+ b
 
   (an % ad) + (bn % bd) = V "lcd" (LCD ad bd) + '(an % ad, bn % bd)
@@ -298,11 +307,11 @@ type family (a ∷ k1) + (b ∷ k2) ∷ k3 where
   (V "lcd" (lcd ∷ Nat)) + '(an % ad, bn % bd) =
     ((an × (lcd `Div` ad) ∷ Nat) + (bn × (lcd `Div` bd) ∷ Nat)) % lcd
 
-  (ai . ar) + b = AsRational (ai . ar) + b
-  a + (bi . br) = a + AsRational (bi . br)
+  (ai . ar) + b = ToTRational (ai . ar) + b
+  a + (bi . br) = a + ToTRational (bi . br)
 
-  (a ∷ Nat) + (bn % bd) = AsRational (ToRational a) + (bn % bd)
-  (an % ad) + (b ∷ Nat) = (an % ad) + AsRational (ToRational b)
+  (a ∷ Nat) + (bn % bd) = ToTRational a + (bn % bd)
+  (an % ad) + (b ∷ Nat) = (an % ad) + ToTRational b
 
   P a + P b = P (a + b)
   P a + N b = a - b
@@ -315,7 +324,13 @@ type family (a ∷ k1) + (b ∷ k2) ∷ k3 where
   a + N b = P a + N b
 
 
-type family (a ∷ k1) - (b ∷ k2) ∷ Signed k3 where
+-- | Generic polymorphic type-level subtraction operator
+--
+-- @kr@ is one of:
+--
+-- * "Nat" — when @ka@ and @kb@ are both "Nat"
+-- * "TRational" — when @ka@ and/or @kb@ is either "TRational" or "FP"
+type family (a ∷ ka) - (b ∷ kb) ∷ Signed kr where
   (a ∷ Nat) - (b ∷ Nat) = V "≥" (b ≤ a) - '(a, b)
   V "≥" 'True - '(a, b) = P (a TL.- b)
   V "≥" 'False - '(a, b) = N (b TL.- a)
@@ -332,11 +347,11 @@ type family (a ∷ k1) - (b ∷ k2) ∷ Signed k3 where
                    )
   V "lcd" (lcd ∷ Nat) - '(an, bn, d) = V "≥" (bn ≤ an) - '(an, bn, d)
 
-  (ai . ar) - b = AsRational (ai . ar) - b
-  a - (bi . br) = a - AsRational (bi . br)
+  (ai . ar) - b = ToTRational (ai . ar) - b
+  a - (bi . br) = a - ToTRational (bi . br)
 
-  (a ∷ Nat) - (bn % bd) = AsRational (ToRational a) - (bn % bd)
-  (an % ad) - (b ∷ Nat) = (an % ad) - AsRational (ToRational b)
+  (a ∷ Nat) - (bn % bd) = ToTRational a - (bn % bd)
+  (an % ad) - (b ∷ Nat) = (an % ad) - ToTRational b
 
   P a - P b = a - b
   P a - N b = P (a + b)
@@ -349,6 +364,7 @@ type family (a ∷ k1) - (b ∷ k2) ∷ Signed k3 where
   a - N b = P a - N b
 
 
+-- | Generic polymorphic type-level less-or-equal comparison operator
 type family (a ∷ k1) ≤ (b ∷ k2) ∷ Bool where
   (a ∷ Nat) ≤ (b ∷ Nat) = a TL.<=? b
 
@@ -381,15 +397,7 @@ class DescendibleAs (a ∷ k) (as ∷ Type) where
   descendAs = descend
 
 
-instance Descendible 'GL.VertexShader where descend Proxy = GL.VertexShader
-instance DescendibleAs 'GL.VertexShader GL.ShaderType
-
-instance Descendible 'GL.FragmentShader where descend Proxy = GL.FragmentShader
-instance DescendibleAs 'GL.FragmentShader GL.ShaderType
-
-
-instance KnownNat n ⇒ DescendibleAs n Rational where
-  descendAs Proxy = natVal (Proxy @n) % 1
+-- ** From "Nat" to term-level instances
 
 instance KnownNat n ⇒ DescendibleAs n Integer where
   descendAs Proxy = natVal $ Proxy @n
@@ -397,15 +405,116 @@ instance KnownNat n ⇒ DescendibleAs n Integer where
 instance KnownNat n ⇒ DescendibleAs n Natural where
   descendAs Proxy = TN.natVal $ Proxy @n
 
+instance DescendibleAs n Integer ⇒ DescendibleAs (n ∷ Nat) Rational where
+  descendAs Proxy = descendAs (Proxy @n) % 1
+
+
+-- *** To hardware internal types instances
+
 instance DescendibleAs n Integer ⇒ DescendibleAs n Int where
   descendAs Proxy = fromInteger $ descendAs $ Proxy @n
 
 instance DescendibleAs n Integer ⇒ DescendibleAs n Word where
   descendAs Proxy = fromInteger $ descendAs $ Proxy @n
 
+
+-- *** Some built-in types descent
+
+
+-- **** Unit
+
+instance DescendibleAs '() () where
+  descendAs Proxy = ()
+
+
+-- **** Bool
+
+instance DescendibleAs 'True Bool where descendAs Proxy = True
+instance DescendibleAs 'False Bool where descendAs Proxy = False
+
+
+-- **** Ordering
+
+instance DescendibleAs 'LT Ordering where descendAs Proxy = LT
+instance DescendibleAs 'EQ Ordering where descendAs Proxy = EQ
+instance DescendibleAs 'GT Ordering where descendAs Proxy = GT
+
+
+-- **** Maybe
+
+instance DescendibleAs 'Nothing (Maybe as) where
+  descendAs Proxy = Nothing
+
+instance DescendibleAs a as ⇒ DescendibleAs ('Just a) (Maybe as) where
+  descendAs Proxy = Just $ descendAs $ Proxy @a
+
+
+-- **** Either
+
+instance DescendibleAs a l ⇒ DescendibleAs ('Left a) (Either l r) where
+  descendAs Proxy = Left $ descendAs $ Proxy @a
+
+instance DescendibleAs a r ⇒ DescendibleAs ('Right a) (Either l r) where
+  descendAs Proxy = Right $ descendAs $ Proxy @a
+
+
+-- ** Type-level "FP" floating point instances
+
+instance
+  ( n % d ~ ToTRational (i . r)
+  , DescendibleAs n Integer
+  , DescendibleAs d Integer
+  ) ⇒ DescendibleAs (i . r) Float
+  where
+  descendAs Proxy = rationalToFloat (descendAs $ Proxy @n) (descendAs $ Proxy @d)
+
+instance
+  ( n % d ~ ToTRational (i . r)
+  , DescendibleAs n Integer
+  , DescendibleAs d Integer
+  ) ⇒ DescendibleAs (i . r) Double
+  where
+  descendAs Proxy = rationalToDouble (descendAs $ Proxy @n) (descendAs $ Proxy @d)
+
+instance
+  ( n % d ~ ToTRational (i . r)
+  , DescendibleAs n Integer
+  , DescendibleAs d Integer
+  ) ⇒ DescendibleAs (i . r) Rational
+  where
+  descendAs Proxy = descendAs (Proxy @n) % descendAs (Proxy @d)
+
+
+-- ** Type-level "TRational" instances
+
+instance
+  ( DescendibleAs n Integer
+  , DescendibleAs d Integer
+  ) ⇒ DescendibleAs (n % d) Rational
+  where
+  descendAs Proxy = descendAs (Proxy @n) % descendAs (Proxy @d)
+
+instance
+  ( DescendibleAs n Integer
+  , DescendibleAs d Integer
+  ) ⇒ DescendibleAs (n % d) Float
+  where
+  descendAs Proxy = rationalToFloat (descendAs $ Proxy @n) (descendAs $ Proxy @d)
+
+instance
+  ( DescendibleAs n Integer
+  , DescendibleAs d Integer
+  ) ⇒ DescendibleAs (n % d) Double where
+  descendAs Proxy = rationalToDouble (descendAs $ Proxy @n) (descendAs $ Proxy @d)
+
+
+-- *** Type-level string instances
+
 instance KnownSymbol s ⇒ DescendibleAs s String where
   descendAs Proxy = symbolVal $ Proxy @s
 
+
+-- ** Signed type-level number instances
 
 instance DescendibleAs a as ⇒ DescendibleAs (P a) as where
   descendAs Proxy = descendAs $ Proxy @a
@@ -413,6 +522,17 @@ instance DescendibleAs a as ⇒ DescendibleAs (P a) as where
 instance (Num as, DescendibleAs a as) ⇒ DescendibleAs (N a) as where
   descendAs Proxy = negate $ descendAs $ Proxy @a
 
+
+-- ** GL instances
+
+instance Descendible 'GL.VertexShader where descend Proxy = GL.VertexShader
+instance DescendibleAs 'GL.VertexShader GL.ShaderType
+
+instance Descendible 'GL.FragmentShader where descend Proxy = GL.FragmentShader
+instance DescendibleAs 'GL.FragmentShader GL.ShaderType
+
+
+-- * "DescendibleAsList" class and instances
 
 -- | Serialization type-level list into term-level
 class DescendibleAsList (list ∷ [a]) (as ∷ Type) where
@@ -427,3 +547,9 @@ instance
   ) ⇒ DescendibleAsList (x ': xs) as
   where
   descendibleAsList Proxy = descendAs (Proxy @x) : descendibleAsList (Proxy @xs)
+
+
+-- * Unicode type-level operators
+
+type a ≡ b = a == b
+type a ≠ b = Not (a ≡ b)
