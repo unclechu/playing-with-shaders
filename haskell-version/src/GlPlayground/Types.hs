@@ -21,9 +21,12 @@ module GlPlayground.Types
 
      -- * Additional types
      , Dimensions (..), dimensionsToNum, numToDimensions
+     , DimensionsToNat
      , Dimensional (..)
      , VertexBuffer (..)
      , KnownVertexBuffer (..)
+     , VerticesCount
+     , VerticesCountConstraint
      , Octets (..)
 
      -- * Shaders
@@ -37,6 +40,7 @@ module GlPlayground.Types
 
 import GHC.TypeLits
 
+import Data.Kind (Constraint)
 import Data.List (find)
 import Data.Proxy (Proxy (Proxy))
 
@@ -70,6 +74,11 @@ instance Descendible 'D1 where descend Proxy = D1
 instance Descendible 'D2 where descend Proxy = D2
 instance Descendible 'D3 where descend Proxy = D3
 
+type family DimensionsToNat (d ∷ Dimensions) ∷ Nat where
+  DimensionsToNat 'D1 = 1
+  DimensionsToNat 'D2 = 2
+  DimensionsToNat 'D3 = 3
+
 dimensionsToNum ∷ Num n ⇒ Dimensions → n
 dimensionsToNum = \case D1 → 1; D2 → 2; D3 → 3
 
@@ -97,13 +106,20 @@ data KnownVertexBuffer (d ∷ Dimensions) (verticesCount ∷ Nat)
   , knownVertexBuffer'SizeInOctets ∷ Octets
   }
 
+type family VerticesCount (d ∷ Dimensions) (items ∷ [a]) ∷ Nat where
+  VerticesCount d items = Length items `Div` DimensionsToNat d
+
+type family VerticesCountConstraint
+            (d ∷ Dimensions)
+            (items ∷ [a])
+            ∷ Constraint where
+
+  VerticesCountConstraint d items = (Length items `Mod` DimensionsToNat d) ~ 0
+
 
 newtype Octets = Octets { unOctets ∷ Int }
   deriving stock (Eq, Show, Ord)
   deriving newtype (Num, Integral, Enum, Bounded, Real)
-
-
--- * Type level
 
 
 -- * Shaders

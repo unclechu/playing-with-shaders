@@ -1,8 +1,12 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UnicodeSyntax #-}
 
 module GlPlayground.Game.MandelbrotSet
@@ -14,11 +18,11 @@ import Data.Proxy (Proxy (Proxy))
 import Control.Monad (when)
 
 import UnliftIO (MonadUnliftIO, MonadIO (liftIO))
-import UnliftIO.Foreign (nullPtr)
+import UnliftIO.Foreign (nullPtr, plusPtr)
 
 import qualified Graphics.Rendering.OpenGL.GL as GL
 
-import GlPlayground.Boilerplate.Shaders (mkVertexBuffer)
+import GlPlayground.Boilerplate.Shaders (mkKnownVertexBuffer)
 import GlPlayground.Game.MandelbrotSet.ShaderProgram
 import GlPlayground.Game.MandelbrotSet.Types
 
@@ -30,8 +34,13 @@ import GlPlayground.Utils
 
 
 game
-  ∷ (MonadUnliftIO m, MonadLogger m, MonadFail m)
-  ⇒ Game m (SubStatic D) (SubState D)
+  ∷
+  ( MonadUnliftIO m
+  , MonadLogger m
+  , MonadFail m
+  , c ~ VerticesCount D TriangleVertices
+  )
+  ⇒ Game m (SubStatic D c) (SubState D)
 game
   = Game
   { game'Initialize = initialize
@@ -46,39 +55,36 @@ game
 type D = 'D2 ∷ Dimensions
 
 
-triangleVertexes ∷ Dimensional D [GL.GLfloat]
-triangleVertexes =
-  Dimensional @'D2
-    [ -1, -1
-    , -1, 1
-    , 1, 1
+type TriangleVertices =
+  [ P (0 . 0), P (0 . 0) -- FIXME: Test shift of first two items
 
-    , 1, 1
-    , 1, -1
-    , -1, -1
-    ]
-  -- Dimensional @D3
-  --   [ -1, -1, 1
-  --   , -1 , 1, 1
-  --   , 1, 1, 1
+  , N (1 . 0), N (1 . 0)
+  , N (1 . 0), P (1 . 0)
+  , P (1 . 0), P (1 . 0)
 
-  --   , 1, 1, 1
-  --   , 1, -1, 1
-  --   , -1, -1, 1
-  --   ]
+  , P (1 . 0), P (1 . 0)
+  , P (1 . 0), N (1 . 0)
+  , N (1 . 0), N (1 . 0)
+  ]
 
 
 -- * Initialization
 
 initialize
-  ∷ (MonadUnliftIO m, MonadLogger m, MonadFail m)
+  ∷ ∀ m vertices c .
+  ( MonadUnliftIO m
+  , MonadLogger m
+  , MonadFail m
+  , vertices ~ TriangleVertices
+  , c ~ VerticesCount D vertices
+  )
   ⇒ WindowContextEvidence
-  → m (SubStatic D, SubState D)
+  → m (SubStatic D c, SubState D)
 initialize wndCtxEvidence = do
   logInfo "Playing Mandelbrot set…"
 
   program ← shaderProgram wndCtxEvidence
-  vertexBuffer ← mkVertexBuffer triangleVertexes
+  vertexBuffer ← mkKnownVertexBuffer (Proxy @'(D, GL.GLfloat, vertices))
 
   positionAttrLoc ← do
     loc ← liftIO ∘ GL.get $ GL.attribLocation program "position"
@@ -91,7 +97,7 @@ initialize wndCtxEvidence = do
           (dimensionsToNum ∘ descend $ Proxy @D)
           GL.Float
           0
-          nullPtr
+          (nullPtr `plusPtr` 8) -- FIXME: Test shift of first two items
       )
 
     pure loc
@@ -117,7 +123,7 @@ initialize wndCtxEvidence = do
 
 -- * Handling events
 
-eventHandler ∷ MonadIO m ⇒ Static (SubStatic D) → Event → m ()
+eventHandler ∷ MonadIO m ⇒ Static (SubStatic D c) → Event → m ()
 eventHandler _static _event = pure ()
 
 
@@ -125,7 +131,7 @@ eventHandler _static _event = pure ()
 
 update
   ∷ MonadIO m
-  ⇒ Static (SubStatic D)
+  ⇒ Static (SubStatic D c)
   → State (SubState D)
   → m (Maybe (SubState D))
 update Static{static'Sub=SubStatic{..}} State{..} = do
@@ -143,8 +149,12 @@ update Static{static'Sub=SubStatic{..}} State{..} = do
 
 -- * Rendering
 
-render ∷ MonadIO m ⇒ Static (SubStatic D) → State (SubState D) → m ()
-render Static{static'Sub=SubStatic{..}} State{} = liftIO $ do
+render
+  ∷ ∀ m c . (MonadIO m, DescendibleAs c Integer)
+  ⇒ Static (SubStatic D c)
+  → State (SubState D)
+  → m ()
+render Static{static'Sub=SubStatic{}} State{} = liftIO $ do
   -- GL.bindBuffer GL.ArrayBuffer GL.$=!
   --   Just (vertexBuffer'BufferObject subStatic'VertexBuffer)
 
@@ -159,10 +169,6 @@ render Static{static'Sub=SubStatic{..}} State{} = liftIO $ do
   --       nullPtr
   --   )
 
-  GL.drawArrays GL.Triangles 0
-    $ subStatic'VertexBuffer
-    & vertexBuffer'VerticesCount
-    & unDimensional
-    & fromIntegral
+  GL.drawArrays GL.Triangles 0 $ fromInteger $ descendAs $ Proxy @c
 
   -- GL.vertexAttribArray (GL.AttribLocation 0) GL.$=! GL.Disabled

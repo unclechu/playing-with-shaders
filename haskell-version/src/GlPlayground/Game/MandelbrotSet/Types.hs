@@ -1,4 +1,6 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UnicodeSyntax #-}
 
@@ -9,12 +11,13 @@ module GlPlayground.Game.MandelbrotSet.Types
 
 import qualified Graphics.Rendering.OpenGL.GL as GL
 
+import GlPlayground.TypeLevel
 import GlPlayground.Types
 
 
-data SubStatic (d ∷ Dimensions)
+data SubStatic (d ∷ Dimensions) (verticesCount ∷ Nat)
   = SubStatic
-  { subStatic'VertexBuffer ∷ VertexBuffer d
+  { subStatic'VertexBuffer ∷ KnownVertexBuffer d verticesCount
 
   , subStatic'Program ∷ GL.Program
 

@@ -1,9 +1,11 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeInType #-}
+{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UnicodeSyntax #-}
 {-# LANGUAGE ViewPatterns #-}
 
@@ -11,10 +13,10 @@ module GlPlayground.Boilerplate.Shaders
      ( mkShader
      , mkProgram
      , mkVertexBuffer
+     , mkKnownVertexBuffer
      ) where
 
-import GHC.TypeLits
-
+import Data.Kind (Type)
 import Data.Proxy (Proxy (Proxy))
 import Data.String (fromString)
 import Data.Text.Encoding (encodeUtf8)
@@ -23,7 +25,7 @@ import qualified Data.Text as T
 import Control.Monad (unless)
 
 import UnliftIO (MonadUnliftIO, MonadIO (liftIO))
-import UnliftIO.Foreign (withArrayLen, Storable (sizeOf))
+import UnliftIO.Foreign (Storable (sizeOf), withArrayLen)
 
 import qualified Graphics.Rendering.OpenGL.GL as GL
 
@@ -114,12 +116,12 @@ mkVertexBuffer
   ∷ ∀ m d a. (MonadUnliftIO m, Descendible d, Storable a, Num a)
   ⇒ Dimensional d [a]
   → m (VertexBuffer d)
-mkVertexBuffer valuesList = do
+mkVertexBuffer dimensionalValuesList = do
   bufferObject ← liftIO GL.genObjectName
   liftIO $ GL.bindBuffer GL.ArrayBuffer GL.$=! Just bufferObject
 
   (totalSize, verticesCount) ←
-    withArrayLen (unDimensional valuesList) $ \count arr → do
+    withArrayLen valuesList $ \count arr → do
       let totalSize = Octets $ unOctets itemSize × count
 
       liftIO $ GL.bufferData GL.ArrayBuffer GL.$=!
@@ -133,4 +135,52 @@ mkVertexBuffer valuesList = do
     totalSize
 
   where
-    itemSize = Octets $ sizeOf @a 0
+    valuesList = unDimensional dimensionalValuesList
+    itemSize = sizeOfItem valuesList
+
+
+-- | Make statically-known vertex buffer
+--
+-- Take the data from type-level and calculate the size into a type-level
+-- number. Also prove that the total amount of items is multiple of the amount
+-- of dimensions.
+mkKnownVertexBuffer
+  ∷ ∀ m a as values d verticesCount len .
+  ( MonadUnliftIO m
+  , Storable as
+  , DescendibleAsList values as
+  , DescendibleAs len Int
+  , len ~ Length values
+  , verticesCount ~ VerticesCount d values
+  , VerticesCountConstraint d values
+  )
+  ⇒ Proxy '(d ∷ Dimensions, as ∷ Type, values ∷ [a])
+  → m (KnownVertexBuffer d verticesCount)
+mkKnownVertexBuffer Proxy = do
+  bufferObject ← liftIO GL.genObjectName
+  liftIO $ GL.bindBuffer GL.ArrayBuffer GL.$=! Just bufferObject
+
+  totalSize ←
+    withArrayLen valuesList $ \_ arr → do
+      let totalSize = Octets $ unOctets itemSize × descendAs (Proxy @len)
+
+      liftIO $ GL.bufferData GL.ArrayBuffer GL.$=!
+        (fromInteger ∘ toInteger $ totalSize, arr, GL.StaticDraw)
+
+      pure totalSize
+
+  pure $ KnownVertexBuffer
+    { knownVertexBuffer'BufferObject = bufferObject
+    , knownVertexBuffer'SizeInOctets = totalSize
+    }
+
+  where
+    valuesList = descendibleAsList $ Proxy @values ∷ [as]
+    itemSize = sizeOfItem valuesList
+
+
+-- * Helpers
+
+sizeOfItem ∷ ∀ a. Storable a ⇒ [a] → Octets
+sizeOfItem [] = Octets 0
+sizeOfItem (x : _) = Octets $ sizeOf x

@@ -19,7 +19,7 @@ module GlPlayground.TypeLevel
      , Nat, KnownNat, natVal, Div, Mod
      , Symbol, KnownSymbol, symbolVal
      , Signed (..), type P, type N, AsSigned, ShrinkSigned
-     , Reciprocal, Even, Odd
+     , Reciprocal, Even, Odd, Length
      , type (≡), type (≠), type (≤)
 
      , module Data.Type.Bool
@@ -31,6 +31,7 @@ module GlPlayground.TypeLevel
      -- * Descent
      , Descendible (..)
      , DescendibleAs (..)
+     , DescendibleAsList (..)
      ) where
 
 import GHC.Float (rationalToFloat, rationalToDouble)
@@ -215,6 +216,11 @@ type family Odd (a ∷ k) ∷ Bool where
   Odd a = Not (Even a)
 
 
+type family Length (list ∷ [a]) ∷ Nat where
+  Length '[] = 0
+  Length (_ ': xs) = 1 + Length xs
+
+
 -- * Arithmetic operators
 --
 -- Polymorphic type-level operators.
@@ -391,6 +397,12 @@ instance KnownNat n ⇒ DescendibleAs n Integer where
 instance KnownNat n ⇒ DescendibleAs n Natural where
   descendAs Proxy = TN.natVal $ Proxy @n
 
+instance DescendibleAs n Integer ⇒ DescendibleAs n Int where
+  descendAs Proxy = fromInteger $ descendAs $ Proxy @n
+
+instance DescendibleAs n Integer ⇒ DescendibleAs n Word where
+  descendAs Proxy = fromInteger $ descendAs $ Proxy @n
+
 instance KnownSymbol s ⇒ DescendibleAs s String where
   descendAs Proxy = symbolVal $ Proxy @s
 
@@ -400,3 +412,18 @@ instance DescendibleAs a as ⇒ DescendibleAs (P a) as where
 
 instance (Num as, DescendibleAs a as) ⇒ DescendibleAs (N a) as where
   descendAs Proxy = negate $ descendAs $ Proxy @a
+
+
+-- | Serialization type-level list into term-level
+class DescendibleAsList (list ∷ [a]) (as ∷ Type) where
+  descendibleAsList ∷ Proxy list → [as]
+
+instance DescendibleAsList '[] as where
+  descendibleAsList Proxy = []
+
+instance
+  ( DescendibleAs x as
+  , DescendibleAsList xs as
+  ) ⇒ DescendibleAsList (x ': xs) as
+  where
+  descendibleAsList Proxy = descendAs (Proxy @x) : descendibleAsList (Proxy @xs)
