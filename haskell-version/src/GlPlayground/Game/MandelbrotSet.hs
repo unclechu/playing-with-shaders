@@ -66,7 +66,7 @@ type TriangleVertices =
   , P (1 . 0), N (1 . 0)
   , N (1 . 0), N (1 . 0)
   ]
-  ∷ [Signed FP]
+  ∷ [Signed FloatingPoint]
 
 
 -- * Initialization

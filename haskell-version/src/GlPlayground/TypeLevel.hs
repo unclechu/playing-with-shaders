@@ -15,7 +15,7 @@
 
 -- | Some generic type-level helpers
 module GlPlayground.TypeLevel
-     ( FP, TRational, ToTRational, type (.), type (%)
+     ( FloatingPoint, TRational, ToTRational, type (.), type (%)
      , Nat, KnownNat, natVal, Div, Mod
      , Symbol, KnownSymbol, symbolVal
      , Signed (..), type P, type N, ToSigned, ShrinkSigned
@@ -60,7 +60,6 @@ import qualified Graphics.Rendering.OpenGL.GL as GL
 -- | Type-level floating-point number
 --
 -- A way to describe floating point numbers on type-level.
--- “FP” stands for “(F)loating (P)oint”.
 --
 -- @
 -- (descendAs (Proxy @(1 . 2)) ∷ Float)  == 1.2
@@ -70,7 +69,7 @@ import qualified Graphics.Rendering.OpenGL.GL as GL
 -- WARNING! Mind that you can’t write down such number as @1.01@
 -- (remainder with leading zeroes). For this cases use "TRational".
 -- You can do something like @1 + (1 % 100) :: TRational@.
-data FP = Nat :. Nat
+data FloatingPoint = Nat :. Nat
 
 -- | Type-level "Rational"
 type TRational = Ratio Nat
@@ -213,7 +212,7 @@ type family Length (list ∷ [a]) ∷ Nat where
 -- @kr@ is one of:
 --
 -- * "Nat" — when @ka@ and @kb@ are both "Nat"
--- * "TRational" — when @ka@ and/or @kb@ is either "Rational" or "FP"
+-- * "TRational" — when @ka@ and/or @kb@ is either "TRational" or "FloatingPoint"
 -- * "Signed" of one of the above
 type family (a ∷ ka) × (b ∷ kb) ∷ kr where
   (a ∷ Nat) × (b ∷ Nat) = a TL.* b
@@ -246,7 +245,7 @@ type family (a ∷ ka) × (b ∷ kb) ∷ kr where
 -- @kr@ is one of:
 --
 -- * "Nat" — when @ka@ and @kb@ are both "Nat"
--- * "TRational" — when @ka@ is "TRational" or "FP" or ("Signed" of any of these)
+-- * "TRational" — when @ka@ is "TRational" or "FloatingPoint" or ("Signed" of these)
 -- * "Signed" of one of the above
 type family (a ∷ ka) ^ (exp ∷ kb) ∷ kr where
   (a ∷ Nat) ^ (exp ∷ Nat) = a TL.^ exp
@@ -301,7 +300,7 @@ type family (a ∷ ka) ÷ (b ∷ kb) ∷ kr where
 -- @kr@ is one of:
 --
 -- * "Nat" — when @ka@ and @kb@ are both "Nat"
--- * "TRational" — when @ka@ and/or @kb@ is either "TRational" or "FP"
+-- * "TRational" — when @ka@ and/or @kb@ is either "TRational" or "FloatingPoint"
 -- * "Signed" of one of the above
 type family (a ∷ ka) + (b ∷ kb) ∷ kr where
   (a ∷ Nat) + (b ∷ Nat) = a TL.+ b
@@ -333,7 +332,7 @@ type family (a ∷ ka) + (b ∷ kb) ∷ kr where
 -- @kr@ is one of:
 --
 -- * "Nat" — when @ka@ and @kb@ are both "Nat"
--- * "TRational" — when @ka@ and/or @kb@ is either "TRational" or "FP"
+-- * "TRational" — when @ka@ and/or @kb@ is either "TRational" or "FloatingPoint"
 type family (a ∷ ka) - (b ∷ kb) ∷ Signed kr where
   (a ∷ Nat) - (b ∷ Nat) = V "≥" (b ≤ a) - '(a, b)
   V "≥" 'True - '(a, b) = P (a TL.- b)
@@ -462,7 +461,7 @@ instance DescendibleAs a r ⇒ DescendibleAs ('Right a) (Either l r) where
   descendAs Proxy = Right $ descendAs $ Proxy @a
 
 
--- ** Type-level "FP" floating point instances
+-- ** Type-level "FloatingPoint" instances
 
 instance
   ( n % d ~ ToTRational (i . r)
