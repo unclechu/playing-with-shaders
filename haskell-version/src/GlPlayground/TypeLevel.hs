@@ -34,7 +34,6 @@ module GlPlayground.TypeLevel
      -- * Descent
      , Descendible (..)
      , DescendibleAs (..)
-     , DescendibleAsList (..)
      ) where
 
 import GHC.Float (rationalToFloat, rationalToDouble)
@@ -532,21 +531,19 @@ instance Descendible 'GL.FragmentShader where descend Proxy = GL.FragmentShader
 instance DescendibleAs 'GL.FragmentShader GL.ShaderType
 
 
--- * "DescendibleAsList" class and instances
+-- ** List instances (serialization into lists)
 
 -- | Serialization type-level list into term-level
-class DescendibleAsList (list ∷ [a]) (as ∷ Type) where
-  descendibleAsList ∷ Proxy list → [as]
+instance DescendibleAs '[] [as] where
+  descendAs Proxy = []
 
-instance DescendibleAsList '[] as where
-  descendibleAsList Proxy = []
-
+-- | Serialization type-level list into term-level
 instance
   ( DescendibleAs x as
-  , DescendibleAsList xs as
-  ) ⇒ DescendibleAsList (x ': xs) as
+  , DescendibleAs xs [as]
+  ) ⇒ DescendibleAs (x ': xs) [as]
   where
-  descendibleAsList Proxy = descendAs (Proxy @x) : descendibleAsList (Proxy @xs)
+  descendAs Proxy = descendAs (Proxy @x) : descendAs (Proxy @xs)
 
 
 -- * Unicode type-level operators

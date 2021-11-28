@@ -149,7 +149,7 @@ mkKnownVertexBuffer
   ∷ ∀ m a as values d verticesCount len .
   ( MonadUnliftIO m
   , Storable as
-  , DescendibleAsList values as
+  , DescendibleAs values [as]
   , DescendibleAs len Int
   , len ~ Length values
   , verticesCount ~ VerticesCount d values
@@ -176,7 +176,7 @@ mkKnownVertexBuffer Proxy = do
     }
 
   where
-    valuesList = descendibleAsList $ Proxy @values ∷ [as]
+    valuesList = descendAs $ Proxy @values ∷ [as]
     itemSize = sizeOfItem valuesList
 
 
