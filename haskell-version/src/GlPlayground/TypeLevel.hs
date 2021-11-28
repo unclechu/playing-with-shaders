@@ -20,7 +20,7 @@ module GlPlayground.TypeLevel
      , Symbol, KnownSymbol, symbolVal
      , Signed (..), type P, type N, AsSigned, ShrinkSigned
      , Reciprocal, Even, Odd
-     , type (≡), type (≠)
+     , type (≡), type (≠), type (≤)
 
      , module Data.Type.Bool
      , module Data.Type.Equality
@@ -288,20 +288,68 @@ type family (a ∷ k1) + (b ∷ k2) ∷ k3 where
   (a ∷ Nat) + (bn % bd) = AsRational (ToRational a) + (bn % bd)
   (an % ad) + (b ∷ Nat) = (an % ad) + AsRational (ToRational b)
 
+  P a + P b = P (a + b)
+  P a + N b = a - b
+  N a + N b = N (a + b)
+  N a + P b = b - a
 
-type family (a ∷ k1) - (b ∷ k2) ∷ k3 where
-  (a ∷ Nat) - (b ∷ Nat) = a TL.- b
+  P a + b = P (a + b)
+  N a + b = N a + P b
+  a + P b = P (a + b)
+  a + N b = P a + N b
+
+
+type family (a ∷ k1) - (b ∷ k2) ∷ Signed k3 where
+  (a ∷ Nat) - (b ∷ Nat) = V "≥" (b ≤ a) - '(a, b)
+  V "≥" 'True - '(a, b) = P (a TL.- b)
+  V "≥" 'False - '(a, b) = N (b TL.- a)
+
+  (an % d) - (bn % d) = V "≥" (bn ≤ an) - '(an, bn, d)
+  V "≥" 'True - '(an, bn, d) = P ((an TL.- bn) % d)
+  V "≥" 'False - '(an, bn, d) = N ((bn TL.- an) % d)
 
   (an % ad) - (bn % bd) = V "lcd" (LCD ad bd) - '(an % ad, bn % bd)
-
-  (V "lcd" (lcd ∷ Nat)) - '(an % ad, bn % bd) =
-    ((an × (lcd `Div` ad) ∷ Nat) - (bn × (lcd `Div` bd) ∷ Nat)) % lcd
+  V "lcd" (lcd ∷ Nat) - '(an % ad, bn % bd) =
+    V "lcd" lcd - '( an × (lcd `Div` ad) ∷ Nat
+                   , bn × (lcd `Div` bd) ∷ Nat
+                   , lcd
+                   )
+  V "lcd" (lcd ∷ Nat) - '(an, bn, d) = V "≥" (bn ≤ an) - '(an, bn, d)
 
   (ai . ar) - b = AsRational (ai . ar) - b
   a - (bi . br) = a - AsRational (bi . br)
 
   (a ∷ Nat) - (bn % bd) = AsRational (ToRational a) - (bn % bd)
   (an % ad) - (b ∷ Nat) = (an % ad) - AsRational (ToRational b)
+
+  P a - P b = a - b
+  P a - N b = P (a + b)
+  N a - N b = b - a
+  N a - P b = N (a + b)
+
+  P a - b = P a - P b
+  N a - b = N a - P b
+  a - P b = P a - P b
+  a - N b = P a - N b
+
+
+type family (a ∷ k1) ≤ (b ∷ k2) ∷ Bool where
+  (a ∷ Nat) ≤ (b ∷ Nat) = a TL.<=? b
+
+  (an % ad) ≤ (bn % bd) = V "lcd" (LCD ad bd) ≤ '(an % ad, bn % bd)
+
+  (V "lcd" (lcd ∷ Nat)) ≤ '(an % ad, bn % bd) =
+    (an × (lcd `Div` ad) ∷ Nat) ≤ (bn × (lcd `Div` bd) ∷ Nat)
+
+  P a ≤ P b = a ≤ b
+  P a ≤ N b = 'False
+  N a ≤ P b = 'True
+  N a ≤ N b = b ≤ a
+
+  P a ≤ b = a ≤ b
+  N a ≤ b = N a ≤ P b
+  a ≤ P b = a ≤ b
+  a ≤ N b = P a ≤ N b
 
 
 -- * Descent
