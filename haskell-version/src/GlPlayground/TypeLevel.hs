@@ -273,6 +273,16 @@ type family (a ∷ k1) ÷ (b ∷ k2) ∷ k3 where
   (a ∷ Nat) ÷ b = AsRational (ToRational a) ÷ b
   a ÷ (b ∷ Nat) = a ÷ AsRational (ToRational b)
 
+  P a ÷ P b = P (a ÷ b)
+  P a ÷ N b = N (a ÷ b)
+  N a ÷ N b = P (a ÷ b)
+  N a ÷ P b = N (a ÷ b)
+
+  P a ÷ b = P a ÷ P b
+  N a ÷ b = N a ÷ P b
+  a ÷ P b = P a ÷ P b
+  a ÷ N b = P a ÷ N b
+
 
 type family (a ∷ k1) + (b ∷ k2) ∷ k3 where
   (a ∷ Nat) + (b ∷ Nat) = a TL.+ b
