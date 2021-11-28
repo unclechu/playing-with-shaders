@@ -40,15 +40,12 @@ module GlPlayground.Types
 
 import GHC.TypeLits
 
-import Data.Kind (Constraint)
 import Data.List (find)
-import Data.Proxy (Proxy (Proxy))
 
 import qualified Graphics.Rendering.OpenGL.GL as GL
 import qualified Graphics.UI.GLFW as GLFW
 
 import GlPlayground.TypeLevel
-import GlPlayground.TypeLevel.Traversable (Length)
 import GlPlayground.Utils
 
 

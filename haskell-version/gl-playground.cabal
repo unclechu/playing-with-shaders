@@ -34,6 +34,8 @@ library
     GlPlayground.Game.Types
     GlPlayground.Logger
     GlPlayground.TypeLevel
+    GlPlayground.TypeLevel.Arithmetic
+    GlPlayground.TypeLevel.Basic
     GlPlayground.TypeLevel.Descendible
     GlPlayground.TypeLevel.Maybe
     GlPlayground.TypeLevel.MemSizeOf

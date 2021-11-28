@@ -1,6 +1,8 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE NoStarIsType #-}
 {-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeInType #-}
 {-# LANGUAGE TypeOperators #-}
@@ -12,7 +14,7 @@ module GlPlayground.TypeLevel.Maybe
      , IsNothing
      ) where
 
-import Data.Type.Bool (Not)
+import GlPlayground.TypeLevel.Basic
 
 
 type family IsJust (a ∷ Maybe k) ∷ Bool where

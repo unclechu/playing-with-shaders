@@ -13,8 +13,6 @@ module GlPlayground.Game.MandelbrotSet
      ( game
      ) where
 
-import Data.Proxy (Proxy (Proxy))
-
 import Control.Monad (when)
 
 import UnliftIO (MonadUnliftIO, MonadIO (liftIO))

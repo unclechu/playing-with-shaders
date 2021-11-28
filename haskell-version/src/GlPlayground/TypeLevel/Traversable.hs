@@ -1,6 +1,8 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE NoStarIsType #-}
 {-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeInType #-}
 {-# LANGUAGE TypeOperators #-}
@@ -15,7 +17,8 @@ module GlPlayground.TypeLevel.Traversable
      , MapLookup
      ) where
 
-import GlPlayground.TypeLevel
+import GlPlayground.TypeLevel.Arithmetic (type (+))
+import GlPlayground.TypeLevel.Basic
 import GlPlayground.TypeLevel.Maybe (IsJust)
 
 

@@ -16,8 +16,6 @@ module GlPlayground.Boilerplate.Shaders
      , mkKnownVertexBuffer
      ) where
 
-import Data.Kind (Type)
-import Data.Proxy (Proxy (Proxy))
 import Data.String (fromString)
 import Data.Text.Encoding (encodeUtf8)
 import qualified Data.Text as T
@@ -31,7 +29,6 @@ import qualified Graphics.Rendering.OpenGL.GL as GL
 
 import GlPlayground.Logger
 import GlPlayground.TypeLevel
-import GlPlayground.TypeLevel.Traversable (Length)
 import GlPlayground.Types
 import GlPlayground.Utils
 
