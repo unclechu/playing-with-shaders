@@ -62,13 +62,34 @@ library
     -Wall
 
 executable gl-playground
+  hs-source-dirs:
+    app
   main-is:
     Main.hs
   build-depends:
     , base
     , gl-playground
+  default-language:
+    Haskell2010
+  ghc-options:
+    -Wall
+    -threaded
+
+test-suite gl-playground-test
+  type:
+    exitcode-stdio-1.0
   hs-source-dirs:
-    app
+    test
+  main-is:
+    TestSpec.hs
+  other-modules:
+    GlPlayground.TypeLevel
+  build-depends:
+    , base
+    , gl-playground
+    , tasty
+    , tasty-hunit
+    , tasty-quickcheck
   default-language:
     Haskell2010
   ghc-options:

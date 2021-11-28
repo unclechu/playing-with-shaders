@@ -51,12 +51,12 @@ let
       ||
       (
         (fileType == "directory") &&
-        (builtins.match "^src(/.+)?$" rFileName != null)
+        (builtins.match "^(src|test)(/.+)?$" rFileName != null)
       )
       ||
       (
         (fileType == "regular") &&
-        (builtins.match "^src/.+\.hs$" rFileName != null)
+        (builtins.match "^(src|test)/.+\.hs$" rFileName != null)
       )
       ||
       (

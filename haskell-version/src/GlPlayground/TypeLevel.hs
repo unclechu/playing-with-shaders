@@ -158,6 +158,8 @@ type family ToSignedRational (a ∷ k) ∷ Signed TRational where
 -- | Find least common denominator
 --
 -- Takes two denominators and returns common denominator for both.
+--
+-- TODO Look first for the lower value
 type family LCD (ad ∷ ka) (bd ∷ kb) ∷ Nat where
   LCD (a ∷ Nat) a = a -- Denominators are equal, nothing to do
   LCD (a ∷ Nat) (b ∷ Nat) = LCD (V "Recur" 1) '(a, b)
