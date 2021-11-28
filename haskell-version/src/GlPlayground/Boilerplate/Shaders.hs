@@ -31,6 +31,7 @@ import qualified Graphics.Rendering.OpenGL.GL as GL
 
 import GlPlayground.Logger
 import GlPlayground.TypeLevel
+import GlPlayground.TypeLevel.Traversable (Length)
 import GlPlayground.Types
 import GlPlayground.Utils
 

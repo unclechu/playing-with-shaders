@@ -34,6 +34,10 @@ library
     GlPlayground.Game.Types
     GlPlayground.Logger
     GlPlayground.TypeLevel
+    GlPlayground.TypeLevel.Descendible
+    GlPlayground.TypeLevel.Maybe
+    GlPlayground.TypeLevel.MemSizeOf
+    GlPlayground.TypeLevel.Traversable
     GlPlayground.Types
     GlPlayground.Utils
   build-depends:

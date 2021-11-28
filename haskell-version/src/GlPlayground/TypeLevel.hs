@@ -19,7 +19,7 @@ module GlPlayground.TypeLevel
      , Nat, KnownNat, natVal, Div, Mod
      , Symbol, KnownSymbol, symbolVal
      , Signed (..), type P, type N, ToSigned, ShrinkSigned
-     , LCD, Reciprocal, Even, Odd, Length
+     , LCD, Reciprocal, Even, Odd
      , type (≤)
 
      , module Data.Type.Bool
@@ -196,11 +196,6 @@ type family Even (a ∷ k) ∷ Bool where
 
 type family Odd (a ∷ k) ∷ Bool where
   Odd a = Not (Even a)
-
-
-type family Length (list ∷ [a]) ∷ Nat where
-  Length '[] = 0
-  Length (_ ': xs) = 1 + Length xs
 
 
 -- * Arithmetic operators

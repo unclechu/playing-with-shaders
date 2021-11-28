@@ -48,6 +48,7 @@ import qualified Graphics.Rendering.OpenGL.GL as GL
 import qualified Graphics.UI.GLFW as GLFW
 
 import GlPlayground.TypeLevel
+import GlPlayground.TypeLevel.Traversable (Length)
 import GlPlayground.Utils
 
 
