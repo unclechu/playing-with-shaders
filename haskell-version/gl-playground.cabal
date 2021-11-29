@@ -90,12 +90,14 @@ test-suite gl-playground-test
     TestSpec.hs
   other-modules:
     GlPlayground.TypeLevel
+    GlPlayground.TypeLevel.MemSizeOf
   build-depends:
     , base
     , gl-playground
     , tasty
     , tasty-hunit
     , tasty-quickcheck
+    , unliftio
   default-language:
     Haskell2010
   ghc-options:

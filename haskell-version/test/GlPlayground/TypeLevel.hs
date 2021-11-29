@@ -15,12 +15,14 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import "gl-playground" GlPlayground.TypeLevel
+import qualified GlPlayground.TypeLevel.MemSizeOf (test)
 
 
 -- TODO add more tests for type-level stuff
 test ∷ TestTree
 test = testGroup "Type-level"
   [ testArithmeticOperators
+  , GlPlayground.TypeLevel.MemSizeOf.test
   ]
 
 
