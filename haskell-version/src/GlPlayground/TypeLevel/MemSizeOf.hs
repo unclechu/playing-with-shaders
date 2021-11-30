@@ -18,6 +18,7 @@ module GlPlayground.TypeLevel.MemSizeOf
 
 import qualified Graphics.Rendering.OpenGL.GL as GL
 
+import GlPlayground.TypeLevel.Arithmetic
 import GlPlayground.TypeLevel.Basic
 import GlPlayground.TypeLevel.Descendible
 import GlPlayground.Types
@@ -35,3 +36,6 @@ newtype TOctets = TOctets Nat
 
 instance DescendibleAs (n ∷ Nat) Int ⇒ DescendibleAs ('TOctets n) Octets where
   descendAs Proxy = Octets $ descendAs $ Proxy @n
+
+
+type instance 'TOctets a × 'TOctets a = 'TOctets (a × a)

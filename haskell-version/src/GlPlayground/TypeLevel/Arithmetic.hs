@@ -80,6 +80,13 @@ type i . r = i ':. r
 type n % d = n ':% d
 
 
+-- Local shorthands
+
+type FP = FloatingPoint
+type TR = TRational
+type ToTR x = ToTRational x
+
+
 data Signed a = Positive a | Negative a
 
 type P x = 'Positive x
@@ -192,25 +199,44 @@ type family Odd (a ∷ k) ∷ Bool where
 -- * "Nat" — when @ka@ and @kb@ are both "Nat"
 -- * "TRational" — when @ka@ and/or @kb@ is either "TRational" or "FloatingPoint"
 -- * "Signed" of one of the above
-type family (a ∷ ka) × (b ∷ kb) ∷ kr where
-  (a ∷ Nat) × (b ∷ Nat) = a TL.* b
-  (an % ad) × (bn % bd) = (an × bn) % (ad × bd)
+type family (a ∷ ka) × (b ∷ kb) ∷ kr
 
-  (ai . ar) × b = ToTRational (ai . ar) × b
-  a × (bi . br) = (bi . br) × a -- Reuse previous pattern
+-- Mono-kinded
+type instance (a ∷ Nat) × (b ∷ Nat) = a TL.* b ∷ Nat
+type instance (an % ad) × (bn % bd) = (an × bn) % (ad × bd) ∷ TR
 
-  (a ∷ Nat) × b = ToTRational a × b
-  a × (b ∷ Nat) = b × a -- Reuse previous pattern
+-- FP + FP = TR
+type instance (a ∷ FP) × (b ∷ FP) = ToTR a × ToTR b
 
-  P a × P b = P (a × b)
-  N a × N b = P (a × b)
-  P a × N b = N (a × b)
-  N a × P b = P b × N a
+-- TR + Nat → TR
+type instance (a ∷ TR) × (b ∷ Nat) = a × ToTR b
+type instance (a ∷ Nat) × (b ∷ TR) = b × a -- Reuse previous pattern
 
-  P a × b = P (a × b)
-  N a × b = N (a × b)
-  a × P b = P b × a
-  a × N b = N b × a
+-- TR + FP → TR
+type instance (a ∷ TR) × (b ∷ FP) = a × ToTR b
+type instance (a ∷ FP) × (b ∷ TR) = b × a -- Reuse previous pattern
+
+-- FP + Nat → TR
+type instance (a ∷ FP) × (b ∷ Nat) = a × ToTR b
+type instance (a ∷ Nat) × (b ∷ FP) = b × a -- Reuse previous pattern
+
+-- Signed poly-kinded
+type instance P a × P b = P (a × b)
+type instance N a × N b = P (a × b)
+type instance P a × N b = N (a × b)
+type instance N a × P b = P b × N a
+
+-- Singed ka + Nat → Signed kr
+type instance (a ∷ Signed k) × (b ∷ Nat) = a × P b
+type instance (a ∷ Nat) × (b ∷ Signed k) = b × a -- Reuse previous pattern
+
+-- Singed ka + TR → Signed kr
+type instance (a ∷ Signed k) × (b ∷ TR) = a × P b
+type instance (a ∷ TR) × (b ∷ Signed k) = b × a -- Reuse previous pattern
+
+-- Singed ka + FP → Signed kr
+type instance (a ∷ Signed k) × (b ∷ FP) = a × P b
+type instance (a ∷ FP) × (b ∷ Signed k) = b × a -- Reuse previous pattern
 
 
 -- | Generic polymorphic type-level exponent operator
