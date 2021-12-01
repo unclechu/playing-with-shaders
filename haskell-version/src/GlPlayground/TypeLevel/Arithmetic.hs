@@ -251,26 +251,31 @@ type instance (a ∷ FP) × (b ∷ Signed k) = b × a -- Reuse previous pattern
 -- * "Nat" — when @ka@ and @kb@ are both "Nat"
 -- * "TRational" — when @ka@ is "TRational" or "FloatingPoint" or ("Signed" of these)
 -- * "Signed" of one of the above
-type family (a ∷ ka) ^ (exp ∷ kb) ∷ kr where
-  (a ∷ Nat) ^ (exp ∷ Nat) = a TL.^ exp
-  (an % ad) ^ (exp ∷ Nat) = (an ^ exp) % (ad ^ exp)
-  (ai . ar) ^ exp = ToTRational (ai . ar) ^ exp
+type family (a ∷ ka) ^ (exp ∷ kb) ∷ kr
 
-  -- Fractional exponent is not supported since it’s not supported by
-  -- term-level (^) operator.
-  -- a ^ (en % ed) = …
-  -- a ^ (ei . er) = a ^ ToTRational (ei . er)
+-- Nat + Nat = Nat
+type instance (a ∷ Nat) ^ (exp ∷ Nat) = a TL.^ exp ∷ Nat
 
-  -- Mind that term-level "TRational" throws an exception for negative exponent.
-  P a ^ P exp = P (a ^ exp)
-  N a ^ N exp = If (Even exp) (P (Reciprocal a ^ exp)) (N (Reciprocal a ^ exp))
-  P a ^ N exp = P (Reciprocal a ^ exp)
-  N a ^ P exp = If (Even exp) (P (a ^ exp)) (N (a ^ exp))
+-- TR + Nat = TR
+type instance (an % ad) ^ (exp ∷ Nat) = (an ^ exp) % (ad ^ exp) ∷ TR
 
-  P a ^ exp = P (a ^ exp)
-  N a ^ exp = N a ^ P exp
-  a ^ P exp = P (a ^ exp)
-  a ^ N exp = P a ^ N exp
+-- FP + Nat = TR
+type instance (a ∷ FP) ^ (exp ∷ Nat) = ToTR a ^ exp ∷ TR
+
+-- Fractional exponent is not supported since it’s not supported by
+-- term-level (^) operator.
+-- type instance a ^ (en % ed) = …
+-- type instance a ^ (ei . er) = a ^ ToTR (ei . er)
+
+-- Mind that term-level "Rational" throws an exception for negative exponent.
+type instance P a ^ P exp = P (a ^ exp)
+type instance N a ^ N exp =
+  If (Even exp) (P (Reciprocal a ^ exp)) (N (Reciprocal a ^ exp))
+type instance P a ^ N exp = P (Reciprocal a ^ exp)
+type instance N a ^ P exp = If (Even exp) (P (a ^ exp)) (N (a ^ exp))
+
+type instance (a ∷ Signed ka) ^ (exp ∷ Nat) = a ^ P exp
+type instance (a ∷ Nat) ^ (exp ∷ Signed kb) = P a ^ exp
 
 
 -- | Generic polymorphic type-level division operator
