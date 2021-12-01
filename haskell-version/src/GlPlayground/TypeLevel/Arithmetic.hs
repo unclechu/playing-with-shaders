@@ -284,24 +284,35 @@ type instance (a ∷ Nat) ^ (exp ∷ Signed kb) = P a ^ exp
 --
 -- * "TRational"
 -- * "Signed TRational"
-type family (a ∷ ka) ÷ (b ∷ kb) ∷ kr where
-  (an % ad) ÷ (bn % bd) = (an × bd) % (ad × bn)
+type family (a ∷ ka) ÷ (b ∷ kb) ∷ kr
 
-  (ai . ar) ÷ b = ToTRational (ai . ar) ÷ b
-  a ÷ (bi . br) = a ÷ ToTRational (bi . br)
+-- Mono-kinded (ka ≡ kb)
+type instance (an % ad) ÷ (bn % bd) = (an × bd) % (ad × bn) ∷ TR
+type instance (a ∷ FP) ÷ (b ∷ FP) = ToTR a ÷ ToTR b ∷ TR
+type instance (a ∷ Nat) ÷ (b ∷ Nat) = ToTR a ÷ ToTR b ∷ TR
 
-  (a ∷ Nat) ÷ b = ToTRational a ÷ b
-  a ÷ (b ∷ Nat) = a ÷ ToTRational b
+type instance (a ∷ TR) ÷ (b ∷ FP) = a ÷ ToTR b
+type instance (a ∷ FP) ÷ (b ∷ TR) = ToTR a ÷ b
 
-  P a ÷ P b = P (a ÷ b)
-  P a ÷ N b = N (a ÷ b)
-  N a ÷ N b = P (a ÷ b)
-  N a ÷ P b = N (a ÷ b)
+type instance (a ∷ TR) ÷ (b ∷ Nat) = a ÷ ToTR b
+type instance (a ∷ Nat) ÷ (b ∷ TR) = ToTR a ÷ b
 
-  P a ÷ b = P a ÷ P b
-  N a ÷ b = N a ÷ P b
-  a ÷ P b = P a ÷ P b
-  a ÷ N b = P a ÷ N b
+type instance (a ∷ FP) ÷ (b ∷ Nat) = ToTR a ÷ ToTR b
+type instance (a ∷ Nat) ÷ (b ∷ FP) = ToTR a ÷ ToTR b
+
+type instance P a ÷ P b = P (a ÷ b)
+type instance P a ÷ N b = N (a ÷ b)
+type instance N a ÷ N b = P (a ÷ b)
+type instance N a ÷ P b = N (a ÷ b)
+
+type instance (a ∷ Signed ka) ÷ (b ∷ Nat) = a ÷ P b
+type instance (a ∷ Nat) ÷ (b ∷ Signed kr) = P a ÷ b
+
+type instance (a ∷ Signed ka) ÷ (b ∷ TR) = a ÷ P b
+type instance (a ∷ TR) ÷ (b ∷ Signed kr) = P a ÷ b
+
+type instance (a ∷ Signed ka) ÷ (b ∷ FP) = a ÷ P b
+type instance (a ∷ FP) ÷ (b ∷ Signed kr) = P a ÷ b
 
 
 -- | Generic polymorphic type-level addition operator
