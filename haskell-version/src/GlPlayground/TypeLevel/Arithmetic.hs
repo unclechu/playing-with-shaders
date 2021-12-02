@@ -364,38 +364,54 @@ type instance (a ∷ TR) + (b ∷ Signed kb) = b + a -- Reuse previous instance
 --
 -- * "Nat" — when @ka@ and @kb@ are both "Nat"
 -- * "TRational" — when @ka@ and/or @kb@ is either "TRational" or "FloatingPoint"
-type family (a ∷ ka) - (b ∷ kb) ∷ Signed kr where
-  (a ∷ Nat) - (b ∷ Nat) = V "≥" (b ≤ a) - '(a, b)
-  V "≥" 'True - '(a, b) = P (a TL.- b)
-  V "≥" 'False - '(a, b) = N (b TL.- a)
+type family (a ∷ ka) - (b ∷ kb) ∷ Signed kr
 
-  (an % d) - (bn % d) = V "≥" (bn ≤ an) - '(an, bn, d)
-  V "≥" 'True - '(an, bn, d) = P ((an TL.- bn) % d)
-  V "≥" 'False - '(an, bn, d) = N ((bn TL.- an) % d)
+type instance (a ∷ Nat) - (b ∷ Nat) = V "≥" (b ≤ a) - '(a, b) ∷ Signed Nat
+type instance V "≥" 'True - '(a, b) = P (a TL.- b) ∷ Signed Nat
+type instance V "≥" 'False - '(a, b) = N (b TL.- a) ∷ Signed Nat
 
-  (an % ad) - (bn % bd) = V "lcd" (LCD ad bd) - '(an % ad, bn % bd)
-  V "lcd" (lcd ∷ Nat) - '(an % ad, bn % bd) =
-    V "lcd" lcd - '( an × (lcd `Div` ad) ∷ Nat
-                   , bn × (lcd `Div` bd) ∷ Nat
-                   , lcd
-                   )
-  V "lcd" (lcd ∷ Nat) - '(an, bn, d) = V "≥" (bn ≤ an) - '(an, bn, d)
+type instance (an % ad) - (bn % bd) =
+  If (ad ≡ bd)
+     (V "≥" (bn ≤ an) - '(an, bn, ad))
+     (V "lcd" (LCD ad bd) - '(an % ad, bn % bd) ∷ Signed TR)
+     ∷ Signed TR
 
-  (ai . ar) - b = ToTRational (ai . ar) - b
-  a - (bi . br) = a - ToTRational (bi . br)
+-- When denominator is the same for both arguments
+type instance V "≥" 'True - '(an, bn, d) = P ((an TL.- bn) % d) ∷ Signed TR
+type instance V "≥" 'False - '(an, bn, d) = N ((bn TL.- an) % d) ∷ Signed TR
 
-  (a ∷ Nat) - (bn % bd) = ToTRational a - (bn % bd)
-  (an % ad) - (b ∷ Nat) = (an % ad) - ToTRational b
+-- When denominator is different
+type instance V "lcd" (lcd ∷ Nat) - '(an % ad, bn % bd) =
+  V "lcd" lcd - '( an × (lcd `Div` ad) ∷ Nat
+                 , bn × (lcd `Div` bd) ∷ Nat
+                 , lcd
+                 ) ∷ Signed TR
+type instance V "lcd" (lcd ∷ Nat) - '(an, bn, d) =
+  V "≥" (bn ≤ an) - '(an, bn, d) ∷ Signed TR
 
-  P a - P b = a - b
-  P a - N b = P (a + b)
-  N a - N b = b - a
-  N a - P b = N (a + b)
+type instance (a ∷ FP) - (b ∷ FP) = ToTR a - b ∷ Signed TR
+type instance (a ∷ FP) - (b ∷ TR) = ToTR a - b ∷ Signed TR
+type instance (a ∷ TR) - (b ∷ FP) = a - ToTR b ∷ Signed TR
 
-  P a - b = P a - P b
-  N a - b = N a - P b
-  a - P b = P a - P b
-  a - N b = P a - N b
+type instance (a ∷ Nat) - (b ∷ TR) = ToTR a - b ∷ Signed TR
+type instance (a ∷ TR) - (b ∷ Nat) = a - ToTR b ∷ Signed TR
+
+type instance (a ∷ Nat) - (b ∷ FP) = ToTR a - b ∷ Signed TR
+type instance (a ∷ FP) - (b ∷ Nat) = ToTR a - b ∷ Signed TR
+
+type instance P a - P b = a - b
+type instance P a - N b = P (a + b)
+type instance N a - N b = b - a
+type instance N a - P b = N (a + b)
+
+type instance (a ∷ Signed ka) - (b ∷ Nat) = a - P b
+type instance (a ∷ Nat) - (b ∷ Signed kb) = P a - b -- Reuse previous instance
+
+type instance (a ∷ Signed ka) - (b ∷ FP) = a - P b
+type instance (a ∷ FP) - (b ∷ Signed kb) = P a - b -- Reuse previous instance
+
+type instance (a ∷ Signed ka) - (b ∷ TR) = a - P b
+type instance (a ∷ TR) - (b ∷ Signed kb) = P a - b -- Reuse previous instance
 
 
 -- | Generic polymorphic type-level less-or-equal comparison operator
