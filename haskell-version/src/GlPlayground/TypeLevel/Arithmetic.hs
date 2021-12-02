@@ -415,23 +415,38 @@ type instance (a ∷ TR) - (b ∷ Signed kb) = P a - b -- Reuse previous instanc
 
 
 -- | Generic polymorphic type-level less-or-equal comparison operator
-type family (a ∷ k1) ≤ (b ∷ k2) ∷ Bool where
-  (a ∷ Nat) ≤ (b ∷ Nat) = a TL.<=? b
+type family (a ∷ k1) ≤ (b ∷ k2) ∷ Bool
 
-  (an % ad) ≤ (bn % bd) = V "lcd" (LCD ad bd) ≤ '(an % ad, bn % bd)
+type instance (a ∷ Nat) ≤ (b ∷ Nat) = a TL.<=? b
 
-  (V "lcd" (lcd ∷ Nat)) ≤ '(an % ad, bn % bd) =
-    (an × (lcd `Div` ad) ∷ Nat) ≤ (bn × (lcd `Div` bd) ∷ Nat)
+type instance (an % ad) ≤ (bn % bd) = V "lcd" (LCD ad bd) ≤ '(an % ad, bn % bd)
 
-  P a ≤ P b = a ≤ b
-  P a ≤ N b = 'False
-  N a ≤ P b = 'True
-  N a ≤ N b = b ≤ a
+type instance V "lcd" (lcd ∷ Nat) ≤ '(an % ad, bn % bd) =
+  (an × (lcd `Div` ad) ∷ Nat) ≤ (bn × (lcd `Div` bd) ∷ Nat)
 
-  P a ≤ b = a ≤ b
-  N a ≤ b = N a ≤ P b
-  a ≤ P b = a ≤ b
-  a ≤ N b = P a ≤ N b
+type instance (a ∷ FP) ≤ (b ∷ FP) = ToTR a ≤ b -- Reuse other instances
+type instance (a ∷ FP) ≤ (b ∷ TR) = ToTR a ≤ b
+type instance (a ∷ TR) ≤ (b ∷ FP) = a ≤ ToTR b
+
+type instance (a ∷ Nat) ≤ (b ∷ TR) = ToTR a ≤ b
+type instance (a ∷ TR) ≤ (b ∷ Nat) = a ≤ ToTR b
+
+type instance (a ∷ Nat) ≤ (b ∷ FP) = ToTR a ≤ b -- Reuse other instances
+type instance (a ∷ FP) ≤ (b ∷ Nat) = ToTR a ≤ b -- Reuse other instances
+
+type instance P a ≤ P b = a ≤ b
+type instance P _ ≤ N _ = 'False
+type instance N _ ≤ P _ = 'True
+type instance N a ≤ N b = b ≤ a
+
+type instance (a ∷ Signed ka) ≤ (b ∷ Nat) = a ≤ P b
+type instance (a ∷ Nat) ≤ (b ∷ Signed kb) = P a ≤ b -- Reuse previous instance
+
+type instance (a ∷ Signed ka) ≤ (b ∷ FP) = a ≤ P b
+type instance (a ∷ FP) ≤ (b ∷ Signed kb) = P a ≤ b -- Reuse previous instance
+
+type instance (a ∷ Signed ka) ≤ (b ∷ TR) = a ≤ P b
+type instance (a ∷ TR) ≤ (b ∷ Signed kb) = P a ≤ b -- Reuse previous instance
 
 
 -- * Descent
