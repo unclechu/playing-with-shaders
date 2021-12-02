@@ -322,29 +322,40 @@ type instance (a ∷ FP) ÷ (b ∷ Signed kr) = P a ÷ b
 -- * "Nat" — when @ka@ and @kb@ are both "Nat"
 -- * "TRational" — when @ka@ and/or @kb@ is either "TRational" or "FloatingPoint"
 -- * "Signed" of one of the above
-type family (a ∷ ka) + (b ∷ kb) ∷ kr where
-  (a ∷ Nat) + (b ∷ Nat) = a TL.+ b
+type family (a ∷ ka) + (b ∷ kb) ∷ kr
 
-  (an % ad) + (bn % bd) = V "lcd" (LCD ad bd) + '(an % ad, bn % bd)
+-- Mono-kinded (ka ≡ kb)
+type instance (a ∷ Nat) + (b ∷ Nat) = a TL.+ b ∷ Nat
+type instance (a ∷ FP) + (b ∷ FP) = ToTR a + ToTR b ∷ TR
 
-  (V "lcd" (lcd ∷ Nat)) + '(an % ad, bn % bd) =
-    ((an × (lcd `Div` ad) ∷ Nat) + (bn × (lcd `Div` bd) ∷ Nat)) % lcd
+type instance (an % ad) + (bn % bd) =
+  V "lcd" (LCD ad bd) + '(an % ad, bn % bd) ∷ TR
 
-  (ai . ar) + b = ToTRational (ai . ar) + b
-  a + (bi . br) = a + ToTRational (bi . br)
+type instance (V "lcd" (lcd ∷ Nat)) + '(an % ad, bn % bd) =
+  ((an × (lcd `Div` ad) ∷ Nat) + (bn × (lcd `Div` bd) ∷ Nat)) % lcd ∷ TR
 
-  (a ∷ Nat) + (bn % bd) = ToTRational a + (bn % bd)
-  (an % ad) + (b ∷ Nat) = (an % ad) + ToTRational b
+type instance (a ∷ FP) + (b ∷ TR) = ToTR a + b
+type instance (a ∷ TR) + (b ∷ FP) = b + a -- Reuse previous instance
 
-  P a + P b = P (a + b)
-  P a + N b = a - b
-  N a + N b = N (a + b)
-  N a + P b = b - a
+type instance (a ∷ Nat) + (b ∷ TR) = ToTR a + b
+type instance (a ∷ TR) + (b ∷ Nat) = b + a -- Reuse previous instance
 
-  P a + b = P (a + b)
-  N a + b = N a + P b
-  a + P b = P (a + b)
-  a + N b = P a + N b
+type instance (a ∷ Nat) + (b ∷ FP) = ToTR a + b -- Reuse TR + FP instance
+type instance (a ∷ FP) + (b ∷ Nat) = b + a -- Reuse previous instance
+
+type instance P a + P b = P (a + b)
+type instance P a + N b = a - b ∷ Signed kr
+type instance N a + N b = N (a + b)
+type instance N a + P b = b - a ∷ Signed kr
+
+type instance (a ∷ Signed ka) + (b ∷ Nat) = a + P b
+type instance (a ∷ Nat) + (b ∷ Signed kb) = b + a -- Reuse previous instance
+
+type instance (a ∷ Signed ka) + (b ∷ FP) = a + P b
+type instance (a ∷ FP) + (b ∷ Signed kb) = b + a -- Reuse previous instance
+
+type instance (a ∷ Signed ka) + (b ∷ TR) = a + P b
+type instance (a ∷ TR) + (b ∷ Signed kb) = b + a -- Reuse previous instance
 
 
 -- | Generic polymorphic type-level subtraction operator
