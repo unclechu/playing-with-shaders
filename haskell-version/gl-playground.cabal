@@ -47,7 +47,6 @@ library
     , base-unicode-symbols
     , bytestring
     , file-embed
-    , generic-lens
     , GLFW-b
     , lifted-async
     , monad-control
