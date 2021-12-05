@@ -5,7 +5,6 @@ let sources = import ../nix/sources.nix; in
 
 , haskell ? pkgs.haskell
 , justStaticExecutables ? haskell.lib.justStaticExecutables
-, callCabal2nix ? pkgs.callCabal2nix
 , cabal-install ? pkgs.cabal-install
 
 , haskellPackages ? haskell.packages.ghc921
@@ -202,7 +201,7 @@ in
     inherit withHoogle;
 
     buildInputs = [
-      cabal-install
+      hsPkgs.cabal-install
       # easy-hls # FIXME not supported yet for 9.2.1
       # hsPkgs.hlint # FIXME not supported yet for 9.2.1
       hsPkgs.hoogle
