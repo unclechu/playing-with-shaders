@@ -18,7 +18,6 @@ import GHC.Real (Ratio ((:%)))
 import qualified GHC.TypeNats as TN
 
 import Data.Ratio ((%))
-import Numeric.Natural (Natural)
 
 import qualified Graphics.Rendering.OpenGL.GL as GL
 
@@ -38,7 +37,10 @@ class DescendibleAs (a ∷ k) (as ∷ Type) where
 
 -- * Instances
 
--- ** From "Nat" to term-level instances
+-- ** From "Natural" to term-level instances
+
+instance DescendibleAs n Natural ⇒ Descendible (n ∷ Natural) where
+  descend Proxy = descendAs $ Proxy @n
 
 instance KnownNat n ⇒ DescendibleAs n Integer where
   descendAs Proxy = natVal $ Proxy @n
@@ -46,7 +48,7 @@ instance KnownNat n ⇒ DescendibleAs n Integer where
 instance KnownNat n ⇒ DescendibleAs n Natural where
   descendAs Proxy = TN.natVal $ Proxy @n
 
-instance DescendibleAs n Integer ⇒ DescendibleAs (n ∷ Nat) Rational where
+instance DescendibleAs n Integer ⇒ DescendibleAs (n ∷ Natural) Rational where
   descendAs Proxy = descendAs (Proxy @n) % 1
 
 
@@ -135,7 +137,6 @@ instance KnownSymbol s ⇒ DescendibleAs s String where
 
 instance Descendible 'GL.VertexShader where descend Proxy = GL.VertexShader
 instance DescendibleAs 'GL.VertexShader GL.ShaderType
-
 instance Descendible 'GL.FragmentShader where descend Proxy = GL.FragmentShader
 instance DescendibleAs 'GL.FragmentShader GL.ShaderType
 
