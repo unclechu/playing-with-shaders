@@ -5,6 +5,7 @@ module Main (main) where
 
 import Test.Tasty
 
+import GlPlayground.ImpredicativeTypesTest (test)
 import GlPlayground.TypeLevel (test)
 
 
@@ -15,4 +16,5 @@ main = defaultMain tests
 tests ∷ TestTree
 tests = testGroup "GL Playground tests"
   [ GlPlayground.TypeLevel.test
+  , GlPlayground.ImpredicativeTypesTest.test
   ]

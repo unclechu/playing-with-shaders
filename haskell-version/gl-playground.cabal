@@ -88,6 +88,7 @@ test-suite gl-playground-test
   main-is:
     TestSpec.hs
   other-modules:
+    GlPlayground.ImpredicativeTypesTest
     GlPlayground.TypeLevel
     GlPlayground.TypeLevel.MemSizeOf
   build-depends:
