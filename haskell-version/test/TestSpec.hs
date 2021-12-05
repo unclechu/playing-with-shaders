@@ -1,3 +1,4 @@
+{-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE UnicodeSyntax #-}
 
 module Main (main) where

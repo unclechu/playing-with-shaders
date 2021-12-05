@@ -1,10 +1,8 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE PackageImports #-}
-{-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeInType #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UnicodeSyntax #-}
 
 module GlPlayground.TypeLevel

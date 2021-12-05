@@ -1,7 +1,7 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UnicodeSyntax #-}
 

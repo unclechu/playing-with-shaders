@@ -1,6 +1,6 @@
+{-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE UnicodeSyntax #-}
 
 module GlPlayground.Game.TestTriangle

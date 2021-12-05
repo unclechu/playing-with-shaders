@@ -1,5 +1,5 @@
+{-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE NoStarIsType #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UnicodeSyntax #-}
 
 module GlPlayground.Utils

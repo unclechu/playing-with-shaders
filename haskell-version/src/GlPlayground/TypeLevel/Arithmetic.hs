@@ -13,13 +13,19 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE UnicodeSyntax #-}
 
+-- For some reason I get this error:
+--  • Expected kind ‘k’, but ‘x :: Nat’ has kind ‘Nat’
+--  • In the first argument of ‘ToSigned’, namely ‘(x :: Nat)’
+--    In the type family declaration for ‘ToSigned’
+-- {-# LANGUAGE GHC2021 #-}
+
 -- | Type-level arithmetics for fractional and signed numbers
 module GlPlayground.TypeLevel.Arithmetic
      ( module GHC.TypeLits
 
      , FloatingPoint, type (.)
      , TRational, ToTRational, type (%)
-     , Signed (..), type P, type N, ToSigned, ShrinkSigned
+     , Signed (..), type P, type N, ToSigned, ToSignedTRational, ShrinkSigned
 
      , LCD, Reciprocal, Even, Odd
 
@@ -136,12 +142,12 @@ type family GetExponentFor10 (e ∷ Nat) (r ∷ Nat) ∷ Nat where
   GetExponentFor10 e r = GetExponentFor10 (e + 1) (r `Div` 10)
 
 
-type family ToSignedRational (a ∷ k) ∷ Signed TRational where
-  ToSignedRational (P x) = P (ToTRational x)
-  ToSignedRational (N x) = N (ToTRational x)
-  ToSignedRational (n % d) = P (ToTRational (n % d))
-  ToSignedRational (i . r) = P (ToTRational (i . r))
-  ToSignedRational (x ∷ Nat) = P (ToTRational x)
+type family ToSignedTRational (a ∷ k) ∷ Signed TRational where
+  ToSignedTRational (P x) = P (ToTRational x)
+  ToSignedTRational (N x) = N (ToTRational x)
+  ToSignedTRational (n % d) = P (ToTRational (n % d))
+  ToSignedTRational (i . r) = P (ToTRational (i . r))
+  ToSignedTRational (x ∷ Nat) = P (ToTRational x)
 
 
 -- | Find least common denominator

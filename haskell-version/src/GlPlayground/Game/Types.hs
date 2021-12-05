@@ -1,4 +1,5 @@
 {-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE UnicodeSyntax #-}
 

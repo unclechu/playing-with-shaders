@@ -1,9 +1,8 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE NoStarIsType #-}
-{-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeInType #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UnicodeSyntax #-}
 
 module GlPlayground.TypeLevel.Basic
@@ -12,7 +11,7 @@ module GlPlayground.TypeLevel.Basic
      , module Data.Proxy
      , module Data.Kind
 
-     , Nat, KnownNat, natVal
+     , Nat, Natural, KnownNat, natVal
      , Symbol, KnownSymbol, symbolVal
 
      -- * Unicode type-level operators
@@ -20,7 +19,7 @@ module GlPlayground.TypeLevel.Basic
      ) where
 
 import GHC.TypeLits
-  ( Nat, KnownNat, natVal
+  ( Nat, Natural, KnownNat, natVal
   , Symbol, KnownSymbol, symbolVal
   )
 
