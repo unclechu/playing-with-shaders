@@ -27,10 +27,12 @@ type MemSizeMap =
 
 
 -- | Type-level equivalent of @Octets@
-newtype TOctets = TOctets Nat
+newtype TOctets = TOctets Natural
 
-instance DescendibleAs (n ∷ Nat) Int ⇒ DescendibleAs ('TOctets n) Octets where
+instance DescendibleAs (n ∷ Natural) Int ⇒ DescendibleAs ('TOctets n) Octets where
   descendAs Proxy = Octets $ descendAs $ Proxy @n
 
 
-type instance 'TOctets a × 'TOctets a = 'TOctets (a × a)
+type instance 'TOctets a × 'TOctets b = 'TOctets (a × b)
+type instance 'TOctets a × (b ∷ Natural) = 'TOctets (a × b)
+type instance (a ∷ Natural) × 'TOctets b = 'TOctets (a × b)
