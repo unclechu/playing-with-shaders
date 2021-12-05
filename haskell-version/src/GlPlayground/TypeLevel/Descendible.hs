@@ -140,6 +140,11 @@ instance DescendibleAs 'GL.VertexShader GL.ShaderType
 instance Descendible 'GL.FragmentShader where descend Proxy = GL.FragmentShader
 instance DescendibleAs 'GL.FragmentShader GL.ShaderType
 
+instance Descendible 'GL.Float where descend Proxy = GL.Float
+instance DescendibleAs 'GL.Float GL.DataType
+instance Descendible 'GL.Double where descend Proxy = GL.Double
+instance DescendibleAs 'GL.Double GL.DataType
+
 
 -- ** List instances (serialization into lists)
 --
