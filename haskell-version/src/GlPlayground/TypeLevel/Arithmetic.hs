@@ -1,23 +1,10 @@
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE EmptyDataDecls #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE NoStarIsType #-}
-{-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeInType #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE UnicodeSyntax #-}
-
--- For some reason I get this error:
---  • Expected kind ‘k’, but ‘x :: Nat’ has kind ‘Nat’
---  • In the first argument of ‘ToSigned’, namely ‘(x :: Nat)’
---    In the type family declaration for ‘ToSigned’
--- {-# LANGUAGE GHC2021 #-}
 
 -- | Type-level arithmetics for fractional and signed numbers
 module GlPlayground.TypeLevel.Arithmetic
@@ -99,19 +86,20 @@ data Signed a = Positive a | Negative a
 type P x = 'Positive x
 type N x = 'Negative x
 
-type family ToSigned (x ∷ k) ∷ Signed a where
-  ToSigned (x ∷ Nat) = P x
-  ToSigned (i . r) = P (i . r)
-  ToSigned (n % d) = P (n % d)
-  ToSigned (P x) = P x
-  ToSigned (N x) = N x
+type family ToSigned (x ∷ k) ∷ Signed a
+type instance ToSigned (x ∷ Nat) = P x
+type instance ToSigned (i . r) = P (i . r)
+type instance ToSigned (n % d) = P (n % d)
+type instance ToSigned (x ∷ Signed k) = x
 
-type family ShrinkSigned (x ∷ Signed k1) ∷ Signed k2 where
-  ShrinkSigned (P (P x)) = ShrinkSigned (P x)
-  ShrinkSigned (P (N x)) = ShrinkSigned (N x)
-  ShrinkSigned (N (P x)) = ShrinkSigned (N x)
-  ShrinkSigned (N (N x)) = ShrinkSigned (P x)
-  ShrinkSigned x = x
+type family ShrinkSigned (x ∷ Signed k1) ∷ Signed k2
+type instance ShrinkSigned (P (P x)) = ShrinkSigned (P x)
+type instance ShrinkSigned (P (N x)) = ShrinkSigned (N x)
+type instance ShrinkSigned (N (P x)) = ShrinkSigned (N x)
+type instance ShrinkSigned (N (N x)) = ShrinkSigned (P x)
+type instance ShrinkSigned (x ∷ Signed Nat) = x
+type instance ShrinkSigned (x ∷ Signed TRational) = x
+type instance ShrinkSigned (x ∷ Signed FP) = x
 
 
 -- | Convert some number to "TRational".
@@ -122,19 +110,22 @@ type family ShrinkSigned (x ∷ Signed k1) ∷ Signed k2 where
 -- * @e@ — exponent
 -- * @i@ — integer
 -- * @r@ — remainder
-type family ToTRational (a ∷ k) ∷ TRational where
-  ToTRational (n % d) = n % d -- Identity
-  ToTRational (x ∷ Nat) = x % 1
+type family ToTRational (a ∷ k) ∷ TRational
+type instance ToTRational (n % d) = n % d -- Identity
+type instance ToTRational (x ∷ Nat) = x % 1
 
-  ToTRational (i . r) = ToTRational (V "Transform" '(i, 1, r))
+type instance ToTRational (i . r) =
+  ToTRational (V "Transform split" '(i, 1, r, r ≡ 0))
 
-  ToTRational (V "Transform" '(n, d, 0)) = n % d
-  ToTRational (V "Transform" '(n ∷ Nat, d ∷ Nat, r ∷ Nat)) =
+type instance ToTRational
+  (V "Transform split" '(n ∷ Nat, d ∷ Nat, _ ∷ Nat, 'True)) = n % d
+type instance ToTRational
+  (V "Transform split" '(n ∷ Nat, d ∷ Nat, r ∷ Nat, 'False)) =
     ToTRational (V "WithExponent" '(GetExponentFor10 0 r, n, d, r))
 
-  ToTRational (V "WithExponent" '(e ∷ Nat, n ∷ Nat, d ∷ Nat, r ∷ Nat))
-    = ((n × (10 ^ e ∷ Nat) ∷ Nat) + r ∷ Nat)
-    % (d × (10 ^ e ∷ Nat) ∷ Nat)
+type instance ToTRational (V "WithExponent" '(e ∷ Nat, n ∷ Nat, d ∷ Nat, r ∷ Nat))
+  = ((n × (10 ^ e ∷ Nat) ∷ Nat) + r ∷ Nat)
+  % (d × (10 ^ e ∷ Nat) ∷ Nat)
 
 
 type family GetExponentFor10 (e ∷ Nat) (r ∷ Nat) ∷ Nat where
@@ -142,12 +133,12 @@ type family GetExponentFor10 (e ∷ Nat) (r ∷ Nat) ∷ Nat where
   GetExponentFor10 e r = GetExponentFor10 (e + 1) (r `Div` 10)
 
 
-type family ToSignedTRational (a ∷ k) ∷ Signed TRational where
-  ToSignedTRational (P x) = P (ToTRational x)
-  ToSignedTRational (N x) = N (ToTRational x)
-  ToSignedTRational (n % d) = P (ToTRational (n % d))
-  ToSignedTRational (i . r) = P (ToTRational (i . r))
-  ToSignedTRational (x ∷ Nat) = P (ToTRational x)
+type family ToSignedTRational (a ∷ k) ∷ Signed TRational
+type instance ToSignedTRational (P x) = P (ToTRational x)
+type instance ToSignedTRational (N x) = N (ToTRational x)
+type instance ToSignedTRational (n % d) = P (ToTRational (n % d))
+type instance ToSignedTRational (i . r) = P (ToTRational (i . r))
+type instance ToSignedTRational (x ∷ Nat) = P (ToTRational x)
 
 
 -- | Find least common denominator
@@ -155,38 +146,41 @@ type family ToSignedTRational (a ∷ k) ∷ Signed TRational where
 -- Takes two denominators and returns common denominator for both.
 --
 -- TODO Look first for the lower value
-type family LCD (ad ∷ ka) (bd ∷ kb) ∷ Nat where
-  LCD (a ∷ Nat) a = a -- Denominators are equal, nothing to do
-  LCD (a ∷ Nat) (b ∷ Nat) = LCD (V "Recur" 1) '(a, b)
+type family LCD (ad ∷ ka) (bd ∷ kb) ∷ Nat
 
-  LCD (V "Recur" (step ∷ Nat)) '(a ∷ Nat, b ∷ Nat) =
-    LCD (V "Try left" step) '((a × step) `Mod` b, a, b)
+type instance LCD (a ∷ Nat) (b ∷ Nat) = LCD (V "Is equal" (a ≡ b)) '(a, b)
+type instance LCD (V "Is equal" 'True) '(a ∷ Nat, _ ∷ Nat) = a
+type instance LCD (V "Is equal" 'False) '(a ∷ Nat, b ∷ Nat) =
+  LCD (V "Recur" 1) '(a, b)
 
-  -- Found it
-  LCD (V "Try left" (step ∷ Nat)) '(0, a ∷ Nat, b ∷ Nat) =
-    a × step ∷ Nat
+type instance LCD (V "Recur" (step ∷ Nat)) '(a ∷ Nat, b ∷ Nat) =
+  LCD (V "Try left" step) '(((a × step) `Mod` b) ≡ 0, a, b)
 
-  LCD (V "Try left" (step ∷ Nat)) '(_ ∷ Nat, a ∷ Nat, b ∷ Nat) =
-    LCD (V "Try right" step) '((b × step) `Mod` a, a, b)
+-- Found it
+type instance LCD (V "Try left" (step ∷ Nat)) '( 'True, a ∷ Nat, b ∷ Nat ) =
+  a × step ∷ Nat
 
-  -- Found it
-  LCD (V "Try right" (step ∷ Nat)) '(0, a ∷ Nat, b ∷ Nat) =
-    b × step ∷ Nat
+type instance LCD (V "Try left" (step ∷ Nat)) '( 'False, a ∷ Nat, b ∷ Nat ) =
+  LCD (V "Try right" step) '(((b × step) `Mod` a) ≡ 0, a, b)
 
-  LCD (V "Try right" (step ∷ Nat)) '(_ ∷ Nat, a ∷ Nat, b ∷ Nat) =
-    LCD (V "Recur" (step + 1 ∷ Nat)) '(a, b)
+-- Found it
+type instance LCD (V "Try right" (step ∷ Nat)) '( 'True, a ∷ Nat, b ∷ Nat ) =
+  b × step ∷ Nat
 
-
-type family Reciprocal (a ∷ k) ∷ TRational where
-  Reciprocal (a ∷ Nat) = 1 % a
-  Reciprocal (i . r) = Reciprocal (ToTRational (i . r))
-  Reciprocal (n % d) = d % n
+type instance LCD (V "Try right" (step ∷ Nat)) '( 'False, a ∷ Nat, b ∷ Nat ) =
+  LCD (V "Recur" (step + 1 ∷ Nat)) '(a, b)
 
 
-type family Even (a ∷ k) ∷ Bool where
-  Even (a ∷ Nat) = (a `Mod` 2) ≡ 0
-  Even (P (a ∷ Nat)) = (a `Mod` 2) ≡ 0
-  Even (N (a ∷ Nat)) = (a `Mod` 2) ≡ 0
+type family Reciprocal (a ∷ k) ∷ TRational
+type instance Reciprocal (a ∷ Nat) = 1 % a
+type instance Reciprocal (i . r) = Reciprocal (ToTRational (i . r))
+type instance Reciprocal (n % d) = d % n
+
+
+type family Even (a ∷ k) ∷ Bool
+type instance Even (a ∷ Nat) = (a `Mod` 2) ≡ 0
+type instance Even (P (a ∷ Nat)) = (a `Mod` 2) ≡ 0
+type instance Even (N (a ∷ Nat)) = (a `Mod` 2) ≡ 0
 
 
 type family Odd (a ∷ k) ∷ Bool where
