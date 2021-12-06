@@ -11,6 +11,7 @@ module GlPlayground.Boilerplate.Shaders
      , mkProgram
      , mkVertexBuffer
      , mkKnownVertexBuffer
+     , getAttribLocation
      ) where
 
 import Data.String (fromString)
@@ -26,6 +27,7 @@ import qualified Graphics.Rendering.OpenGL.GL as GL
 
 import GlPlayground.Logger
 import GlPlayground.TypeLevel
+import GlPlayground.TypeLevel.MemSizeOf
 import GlPlayground.Types
 import GlPlayground.Utils
 
@@ -172,6 +174,19 @@ mkKnownVertexBuffer Proxy = do
   where
     valuesList = descendAs $ Proxy @values ∷ [as]
     itemSize = sizeOfItem valuesList
+
+
+getAttribLocation
+  ∷ ∀ name t n m
+  . (IsJust_ (MapLookup t MemSizeMap), DescendibleAs name String, MonadIO m)
+  ⇒ GL.Program
+  → m (TypedAttribLocation name t n)
+getAttribLocation program
+  = fmap TypedAttribLocation
+  ∘ liftIO
+  ∘ GL.get
+  ∘ GL.attribLocation program
+  $ descendAs (Proxy @name)
 
 
 -- * Helpers

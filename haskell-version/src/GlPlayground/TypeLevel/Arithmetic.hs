@@ -14,7 +14,9 @@ module GlPlayground.TypeLevel.Arithmetic
      , TRational, ToTRational, type (%)
      , Signed (..), type P, type N, ToSigned, ToSignedTRational, ShrinkSigned
 
-     , LCD, Reciprocal, Even, Odd
+     , LCD, Reciprocal
+     , Even, Even_
+     , Odd, Odd_
 
      -- * Arithmetic operators
      , type (×), type (^), type (÷)
@@ -182,9 +184,15 @@ type instance Even (a ∷ Nat) = (a `Mod` 2) ≡ 0
 type instance Even (P (a ∷ Nat)) = (a `Mod` 2) ≡ 0
 type instance Even (N (a ∷ Nat)) = (a `Mod` 2) ≡ 0
 
+type family Even_ (a ∷ k) ∷ Constraint where
+  Even_ x = Even x ~ 'True
+
 
 type family Odd (a ∷ k) ∷ Bool where
   Odd a = Not (Even a)
+
+type family Odd_ (a ∷ k) ∷ Constraint where
+  Odd_ x = Odd x ~ 'True
 
 
 -- * Arithmetic operators

@@ -14,13 +14,13 @@ import GlPlayground.TypeLevel
 import GlPlayground.Types
 
 
-data SubStatic (d ∷ Dimensions) (verticesCount ∷ Nat)
+data SubStatic (d ∷ Dimensions) (verticesCount ∷ Natural)
   = SubStatic
   { subStatic'VertexBuffer ∷ KnownVertexBuffer d verticesCount
 
   , subStatic'Program ∷ GL.Program
 
-  , subStatic'PositionAttrLoc ∷ GL.AttribLocation
+  , subStatic'PositionAttrLoc ∷ TypedAttribLocation "position" GL.GLfloat 4
 
   , subStatic'WindowWidthLoc ∷ GL.UniformLocation
   , subStatic'WindowHeightLoc ∷ GL.UniformLocation

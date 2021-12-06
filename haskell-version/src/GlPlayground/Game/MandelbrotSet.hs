@@ -1,5 +1,6 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE GHC2021 #-}
+{-# LANGUAGE ImpredicativeTypes #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeFamilies #-}
@@ -16,7 +17,7 @@ import UnliftIO.Foreign (nullPtr, plusPtr)
 
 import qualified Graphics.Rendering.OpenGL.GL as GL
 
-import GlPlayground.Boilerplate.Shaders (mkKnownVertexBuffer)
+import GlPlayground.Boilerplate.Shaders
 import GlPlayground.Game.MandelbrotSet.ShaderProgram
 import GlPlayground.Game.MandelbrotSet.Types
 
@@ -47,6 +48,8 @@ game
 -- * Static data
 
 type D = 'D2 ∷ Dimensions
+
+type VertexType = GL.GLfloat
 
 
 type TriangleVertices =
@@ -79,14 +82,14 @@ initialize wndCtxEvidence = do
   logInfo "Playing Mandelbrot set…"
 
   program ← shaderProgram wndCtxEvidence
-  vertexBuffer ← mkKnownVertexBuffer (Proxy @'(D, GL.GLfloat, vertices))
+  vertexBuffer ← mkKnownVertexBuffer (Proxy @'(D, VertexType, vertices))
 
   positionAttrLoc ← do
-    loc ← liftIO ∘ GL.get $ GL.attribLocation program "position"
+    loc ← getAttribLocation program
 
     -- TODO vertex buffer evidence
-    GL.vertexAttribArray loc GL.$=! GL.Enabled
-    GL.vertexAttribPointer loc GL.$=!
+    GL.vertexAttribArray (unTypedAttribLocation loc) GL.$=! GL.Enabled
+    GL.vertexAttribPointer (unTypedAttribLocation loc) GL.$=!
       ( GL.ToFloat
       , GL.VertexArrayDescriptor
           (dimensionsToNum ∘ descend $ Proxy @D)

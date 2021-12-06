@@ -25,6 +25,7 @@ module GlPlayground.Types
 
      -- * Shaders
      , TypedShader (..)
+     , TypedAttribLocation (..)
 
      -- * Utils
      , Evidence (..)
@@ -118,6 +119,17 @@ newtype Octets = Octets { unOctets ∷ Int }
 
 newtype TypedShader (t ∷ GL.ShaderType)
   = TypedShader { unTypedShader ∷ GL.Shader }
+
+-- | Abstraction on top of "GL.AttribLocation" with additional info
+--
+-- The extra provided information helps to statically check that the provided
+-- vertrex buffer and the memory offset satisfies the given constraints for this
+-- location.
+--
+-- E.g. for @vec3@ it should be @TypedAttribLocation "position" GL.GLfloat 3@
+-- (where “position” is the name of the attribute).
+newtype TypedAttribLocation (name ∷ Symbol) (t ∷ Type) (components ∷ Natural)
+  = TypedAttribLocation { unTypedAttribLocation ∷ GL.AttribLocation }
 
 
 -- * Utils
