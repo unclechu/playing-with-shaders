@@ -20,11 +20,11 @@ data SubStatic (d ∷ Dimensions) (verticesCount ∷ Natural)
 
   , subStatic'Program ∷ GL.Program
 
-  , subStatic'PositionAttrLoc ∷ TypedAttribLocation "position" GL.GLfloat 4
+  , subStatic'PositionAttrLoc ∷ TypedAttribLocation "position" GL.GLfloat
 
-  , subStatic'WindowWidthLoc ∷ GL.UniformLocation
-  , subStatic'WindowHeightLoc ∷ GL.UniformLocation
-  , subStatic'TimeLoc ∷ GL.UniformLocation
+  , subStatic'WindowWidthLoc ∷ TypedUniformLocation "ww" GL.GLint
+  , subStatic'WindowHeightLoc ∷ TypedUniformLocation "wh" GL.GLint
+  , subStatic'TimeLoc ∷ TypedUniformLocation "time" GL.GLdouble
   }
 
 

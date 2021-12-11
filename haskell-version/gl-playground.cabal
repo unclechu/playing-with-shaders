@@ -39,7 +39,10 @@ library
     GlPlayground.TypeLevel.Descendible
     GlPlayground.TypeLevel.Maybe
     GlPlayground.TypeLevel.MemSizeOf
+    GlPlayground.TypeLevel.Monoid
+    GlPlayground.TypeLevel.Semigroup
     GlPlayground.TypeLevel.Traversable
+    GlPlayground.TypeLevel.TypeName
     GlPlayground.Types
     GlPlayground.Utils
   build-depends:

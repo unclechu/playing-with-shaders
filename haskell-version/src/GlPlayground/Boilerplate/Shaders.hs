@@ -12,6 +12,8 @@ module GlPlayground.Boilerplate.Shaders
      , mkVertexBuffer
      , mkKnownVertexBuffer
      , getAttribLocation
+     , getUniformLocation
+     , setUniformValue
      ) where
 
 import Data.String (fromString)
@@ -178,15 +180,37 @@ mkKnownVertexBuffer Proxy = do
 
 getAttribLocation
   ∷ ∀ name t n m
-  . (IsJust_ (MapLookup t MemSizeMap), DescendibleAs name String, MonadIO m)
+  . (GetMemSize t ~ 'TOctets n, DescendibleAs name String, MonadIO m)
   ⇒ GL.Program
-  → m (TypedAttribLocation name t n)
+  → m (TypedAttribLocation name t)
 getAttribLocation program
   = fmap TypedAttribLocation
   ∘ liftIO
   ∘ GL.get
   ∘ GL.attribLocation program
   $ descendAs (Proxy @name)
+
+
+getUniformLocation
+  ∷ ∀ name t n m
+  . (GetMemSize t ~ 'TOctets n, DescendibleAs name String, MonadIO m)
+  ⇒ GL.Program
+  → m (TypedUniformLocation name t)
+getUniformLocation program
+  = fmap TypedUniformLocation
+  ∘ liftIO
+  ∘ GL.uniformLocation program
+  $ descendAs (Proxy @name)
+
+
+setUniformValue
+  ∷ ∀ name t n m
+  . (GetMemSize t ~ 'TOctets n, GL.Uniform t, MonadIO m)
+  ⇒ TypedUniformLocation name t
+  → t
+  → m ()
+setUniformValue (TypedUniformLocation l) x =
+  liftIO $ GL.uniform l GL.$=! x
 
 
 -- * Helpers

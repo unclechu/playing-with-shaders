@@ -26,6 +26,7 @@ module GlPlayground.Types
      -- * Shaders
      , TypedShader (..)
      , TypedAttribLocation (..)
+     , TypedUniformLocation (..)
 
      -- * Utils
      , Evidence (..)
@@ -120,6 +121,7 @@ newtype Octets = Octets { unOctets ∷ Int }
 newtype TypedShader (t ∷ GL.ShaderType)
   = TypedShader { unTypedShader ∷ GL.Shader }
 
+
 -- | Abstraction on top of "GL.AttribLocation" with additional info
 --
 -- The extra provided information helps to statically check that the provided
@@ -128,8 +130,15 @@ newtype TypedShader (t ∷ GL.ShaderType)
 --
 -- E.g. for @vec3@ it should be @TypedAttribLocation "position" GL.GLfloat 3@
 -- (where “position” is the name of the attribute).
-newtype TypedAttribLocation (name ∷ Symbol) (t ∷ Type) (components ∷ Natural)
+newtype TypedAttribLocation (name ∷ Symbol) (t ∷ Type)
   = TypedAttribLocation { unTypedAttribLocation ∷ GL.AttribLocation }
+
+
+-- | Typed uniform location
+--
+-- The same as "TypedAttribLocation" but for "UniformLocation".
+newtype TypedUniformLocation (name ∷ Symbol) (t ∷ Type)
+  = TypedUniformLocation { unTypedUniformLocation ∷ GL.UniformLocation }
 
 
 -- * Utils

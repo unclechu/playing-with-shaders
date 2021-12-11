@@ -100,9 +100,9 @@ initialize wndCtxEvidence = do
 
     pure loc
 
-  wwLoc ← liftIO $ GL.uniformLocation program "ww"
-  whLoc ← liftIO $ GL.uniformLocation program "wh"
-  timeLoc ← liftIO $ GL.uniformLocation program "time"
+  wwLoc ← getUniformLocation program
+  whLoc ← getUniformLocation program
+  timeLoc ← getUniformLocation program
 
   GL.currentProgram GL.$=! Just program
 
@@ -134,13 +134,13 @@ update
   → m (Maybe (SubState D))
 update Static{static'Sub=SubStatic{..}} State{..} = do
   when (fst state'NewCanvasSize ≠ fst state'OldCanvasSize) $
-    liftIO $ GL.uniform subStatic'WindowWidthLoc GL.$=!
-      (fromIntegral $ fst state'NewCanvasSize ∷ GL.GLint)
+    setUniformValue subStatic'WindowWidthLoc
+      (fromIntegral $ fst state'NewCanvasSize)
   when (snd state'NewCanvasSize ≠ snd state'OldCanvasSize) $
-    liftIO $ GL.uniform subStatic'WindowHeightLoc GL.$=!
-      (fromIntegral $ snd state'NewCanvasSize ∷ GL.GLint)
+    setUniformValue subStatic'WindowHeightLoc
+      (fromIntegral $ snd state'NewCanvasSize)
 
-  liftIO $ GL.uniform subStatic'TimeLoc GL.$=! (state'NewTime ∷ GL.GLdouble)
+  setUniformValue subStatic'TimeLoc state'NewTime
 
   pure Nothing
 
